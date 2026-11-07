@@ -21,9 +21,14 @@ Die Sidebar ist auf niedrigen Bildschirmen scrollbar.
   Games, Senpai-Cards, Johto-Cards und BulkParadise TCG (WooCommerce Store API)**;
   alle fünf Quellen live geprüft.
 - Zusätzlich **New Era TCG, Gem Cards, Xtreme Hits, cardcosmos und YONKO TCG**
-  über gezielte Shopify-Kollektionen; damit zehn konfigurierte Händler.
+  über gezielte Shopify-Kollektionen.
   Je drei Produktvarianten wurden gegen frische Detailabrufe geprüft.
   Umfang und Grenzen: [Händlererweiterung](docs/ADDITIONAL-MERCHANTS.md).
+- Zusätzlich **Gate to the Games, collect-it, Trader-Online, Card-Corner,
+  LottiCards, Müller, CrispyCards und Spielewelt** über öffentliche HTML-Kataloge
+  und konkrete strukturierte Produktangebote; damit 18 konfigurierte Händler.
+  **Games Island und Smyths Toys** sind wegen gesperrter Datenquelle bzw.
+  Zugriffsprüfung noch nicht aktiviert. [Prüfbericht](docs/REQUESTED-MERCHANTS.md).
 - Getrennte Variantenpreise und Bestände, auch für Booster/Display-Auswahlartikel.
 - Separater Worker mit regelmäßigen Abrufen, Shop-Leases, HTTP-Abständen,
   begrenzten Wiederholungen und Backoff bei Fehlern.
@@ -257,6 +262,10 @@ Vorhandene Adapter:
 
 - `shopify`: `page_size`, `max_pages`, `currency`, optional `collections`.
 - `woocommerce`: `page_size`, `max_pages`, `searches` für ausgewählte Suchbegriffe.
+- `structured_html`: `categories` mit `path` und optionalem TCG-Kontext `game`,
+  `products_per_category` (maximal zehn); `markup: trader` bzw. `markup: shopify`
+  für die geprüften Katalogvorlagen. Jeder übernommene Preis stammt aus einem
+  frischen Produktdetailabruf. Mehrdeutige Varianten-/Mindestpreise werden ausgelassen.
 
 Für andere Shops eine Klasse mit `discover()` und `fetch_url()` unter
 `backend/app/adapters/` implementieren und in `ADAPTERS` registrieren. Sie liefert
@@ -312,7 +321,7 @@ Einrichtung, Betrieb und Backups: [Deployment-Anleitung](docs/DEPLOYMENT.md).
 
 ## Bewusste Grenzen und nächste Schritte
 
-- Zehn Händler, begrenzte Katalogfenster; weitere gute DE/EU-Quellen liefern den
+- 18 Händler, begrenzte Katalogfenster; weitere gute DE/EU-Quellen liefern den
   größten zusätzlichen Nutzen.
 - Kein vollständiger Sealed-Katalog. Fehlende Packzahlen/Produktmerkmale werden
   nicht geraten. Im ersten Live-Ausschnitt lagen noch keine sicher zugeordneten

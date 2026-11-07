@@ -192,5 +192,188 @@
         "dragon-ball-display"
       ]
     }
+  },
+  {
+    "slug": "gate-to-the-games",
+    "name": "Gate to the Games",
+    "base_url": "https://www.gate-to-the-games.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "categories": [
+        {
+          "path": "/Pokemon-Karten/Pokemon-Displays/",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/Pokemon-Karten/Pokemon-Booster/",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/One-Piece-TCG-Trading-Card-Game-Kartenspiel-Sammelkarten-englisch",
+          "game": "One Piece"
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "collect-it",
+    "name": "collect-it",
+    "base_url": "https://www.collect-it.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "categories": [
+        {
+          "path": "/pokemon/booster-displays",
+          "game": "Pokemon"
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "trader-online",
+    "name": "Trader-Online",
+    "base_url": "https://trader-online.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "markup": "trader",
+      "categories": [
+        {
+          "path": "/Pokemon/Displays-Boxen/Booster-Displays/",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/Pokemon/Displays-Boxen/Booster-Packs/",
+          "game": "Pokemon"
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "card-corner",
+    "name": "Card-Corner",
+    "base_url": "https://www.card-corner.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "categories": [
+        {
+          "path": "/Pokemon-Booster",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/Pokemon-Display",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/One-Piece-Karten",
+          "game": "One Piece"
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "lotticards",
+    "name": "LottiCards",
+    "base_url": "https://www.lotticards.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "categories": [
+        {
+          "path": "/pokemon-booster-displays",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/One-Piece_1",
+          "game": "One Piece"
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "mueller",
+    "name": "Müller",
+    "base_url": "https://www.mueller.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "categories": [
+        {
+          "path": "/search/?q=dragon%20ball",
+          "game": ""
+        },
+        {
+          "path": "/c/spielwaren/spiele-puzzles/sammelkarten/",
+          "game": ""
+        }
+      ],
+      "products_per_category": 6
+    }
+  },
+  {
+    "slug": "crispycards",
+    "name": "CrispyCards",
+    "base_url": "https://crispycards.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "markup": "shopify",
+      "products_per_category": 6,
+      "categories": [
+        {
+          "path": "/collections/pokemon-display",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/collections/one-piece-displays-auf-englisch",
+          "game": "One Piece"
+        },
+        {
+          "path": "/collections/dragon-ball-tcg",
+          "game": ""
+        }
+      ]
+    }
+  },
+  {
+    "slug": "spielewelt",
+    "name": "Spielewelt",
+    "base_url": "https://spielewelt.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 1200,
+    "config": {
+      "markup": "shopify",
+      "products_per_category": 6,
+      "categories": [
+        {
+          "path": "/collections/pokemon-displays",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/collections/pokemon-booster",
+          "game": "Pokemon"
+        },
+        {
+          "path": "/collections/one-piece-kopie",
+          "game": "One Piece"
+        }
+      ]
+    }
   }
 ]

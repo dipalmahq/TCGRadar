@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "games-island",
+    "name": "Games Island",
+    "base_url": "https://games-island.eu",
+    "status": "blocked",
+    "reason": "Main catalog returns crawler guidance instead of products. Linked https://crawlme.games-island.eu/robots.txt disallows all paths for User-agent: *."
+  },
+  {
+    "slug": "smyths-toys",
+    "name": "Smyths Toys",
+    "base_url": "https://www.smythstoys.com/de/de-de",
+    "status": "blocked",
+    "reason": "Local public page returns Pardon Our Interruption. Production server receives an Incapsula Request unsuccessful page (HTTP 200), without product data."
+  }
+]
