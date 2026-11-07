@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16-bookworm
@@ -25,8 +25,8 @@ jobs:
       RADAR_DATABASE_URL: postgresql+psycopg://radar:ci_test_only@localhost:5432/radar_test
       RADAR_TEST_DATABASE_URL: postgresql+psycopg://radar:ci_test_only@localhost:5432/radar_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -34,13 +34,13 @@ jobs:
       - run: pip install -r backend/requirements.lock && pip install --no-deps -e backend
       - run: python -m app.manage init
       - run: python -m alembic -c backend/alembic.ini check
-      - run: python -m pytest backend/tests --basetemp=data/pytest-ci --cov=app --cov-report=term
+      - run: python -m pytest backend/tests --basetemp="$RUNNER_TEMP/joyboyz-pytest" --cov=app --cov-report=term
 
   frontend-and-container:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
       - run: npm install -g pnpm@11.25.0

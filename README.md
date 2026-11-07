@@ -8,7 +8,12 @@ Die Anwendung entdeckt Produkte in öffentlichen Shopkatalogen und überwacht
 zusätzlich direkte Produktlinks. Es werden **keine Demo-Angebote** in die Datenbank
 geladen. Preise und Verfügbarkeiten stammen aus den jeweiligen Shops.
 
-![Mehrfachfilter mit tatsächlich importierten Angeboten](docs/multiselect-preview.png)
+![Einkaufsradar mit dezenten Anime-Details und echten Angeboten](docs/anime-design-preview.png)
+
+Das freigegebene Design ergänzt das klassische Radar-Logo und einen kleinen
+Strohhut in der Sidebar. Diese Details
+sind dekorativ; Navigation, Filter und Angebotsliste behalten ihre Struktur.
+Die Sidebar ist auf niedrigen Bildschirmen scrollbar.
 
 ## Was funktioniert
 
@@ -94,6 +99,10 @@ verändert keine Benutzergruppen oder Windows-Features:
 ```
 
 Die Hilfe verwendet für den bestehenden Docker-Daemon den WSL-Administrator.
+Wird Docker Desktop später installiert und hat dort noch kein Radar-Projekt,
+verwenden Start- und Prüfhelfer weiterhin den vorhandenen Ubuntu-Projektstack.
+So bleibt die bisherige Datenbank zugeordnet; der globale Docker-Kontext wird
+nicht geändert.
 Das Dashboard bleibt an `127.0.0.1:8000` gebunden; der Team-Schlüssel steht in der
 privaten `.env`.
 
@@ -257,7 +266,7 @@ als ausverkauft. Verbindungsfehler und veraltete Prüfungen ergeben `unbekannt`.
 ## Tests und Build
 
 ```bash
-python -m pytest backend/tests --basetemp=data/pytest-local --cov=app
+python -m pytest backend/tests --cov=app
 pnpm --dir frontend run build
 python -m alembic -c backend/alembic.ini check
 ```
@@ -269,7 +278,10 @@ PostgreSQL-Testdatenbank mit pro Test isoliertem Schema aus. Ausschließlich ein
 dafür vorgesehenen Testzugang verwenden.
 
 Die GitHub-Workflow-Datei prüft zusätzlich PostgreSQL-Migrationen und den
-Compose-Start. Sie wurde vorbereitet, aber noch nicht auf GitHub ausgeführt.
+Compose-Start. Der erste GitHub-Lauf bestand den Frontend-/Container-Job;
+im Backend-Job fehlte der Elternordner des temporären Testpfads. Der korrigierte
+Pfad wurde lokal in einem frischen Linux-Checkout mit PostgreSQL geprüft
+(64 Tests bestanden); ein neuer GitHub-Lauf steht noch aus.
 Die gebaute Linux-Anwendung lässt sich auch lokal gegen eine eigene, temporäre
 PostgreSQL-Testdatenbank prüfen, ohne die Anwendungsdatenbank zu verändern:
 

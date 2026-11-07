@@ -95,6 +95,10 @@ small {
   flex-direction: column;
   padding: 34px 19px 0;
   z-index: 30;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #3e4b3c transparent;
 }
 .brand {
   display: flex;
@@ -115,13 +119,17 @@ small {
   margin-top: 3px;
 }
 .brand-icon {
-  width: 41px;
-  height: 41px;
+  width: 44px;
+  height: 48px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
-  background: var(--accent);
-  border-radius: 12px;
-  color: #253017;
+}
+.brand-icon img {
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 .workspace-chip {
   border: 1px solid #334037;
@@ -247,12 +255,21 @@ nav button.active .nav-count {
 .game-dot.dragonball {
   background: #d68e68;
 }
-.fw-label {
+.tcg-line-tag {
   font-size: 8px;
   padding: 2px 4px;
-  background: #303b2e;
-  color: #8c9a85;
+  line-height: 1.2;
+  font-weight: 600;
   border-radius: 3px;
+  white-space: nowrap;
+}
+.game-navigation .tcg-line-tag {
+  background: #303b2e;
+  color: #a8b59e;
+}
+.game-navigation .masters-tag {
+  background: #352c3d;
+  color: #c2a6d8;
 }
 .sidebar-callout {
   margin: clamp(20px, 5vh, 65px) 8px 22px;
@@ -261,8 +278,9 @@ nav button.active .nav-count {
   border: 1px solid #34452e;
   border-radius: 9px;
 }
-.sidebar-callout > svg {
-  color: var(--accent);
+.sidebar-callout .straw-hat {
+  display: block;
+  object-fit: contain;
   margin-bottom: 13px;
 }
 .sidebar-callout strong {
@@ -273,12 +291,6 @@ nav button.active .nav-count {
   color: #e5ebdb;
   letter-spacing: -0.25px;
 }
-.sidebar-callout p {
-  font-size: 10px;
-  line-height: 1.8;
-  color: #88987e;
-  margin: 9px 0 18px;
-}
 .sidebar-callout button {
   display: flex;
   justify-content: space-between;
@@ -288,9 +300,11 @@ nav button.active .nav-count {
   color: #c6dd8a;
   font-size: 10px;
   padding: 9px 0;
+  margin-top: 16px;
   border-top: 1px solid #405035;
 }
 .sidebar-bottom {
+  position: relative;
   margin-top: auto;
   display: flex;
   align-items: center;
@@ -560,9 +574,14 @@ h1 {
 .game-tabs button:hover {
   color: #3a452d;
 }
-.game-tabs small {
+.game-tabs .tcg-line-tag {
   font-size: 8px;
-  color: #9aa38f;
+  background: #edf1e7;
+  color: #65755a;
+}
+.game-tabs .masters-tag {
+  background: #f0e9f5;
+  color: #82589c;
 }
 .checked-label {
   display: flex;
@@ -2127,7 +2146,7 @@ h1 {
     width: 5px;
     height: 5px;
   }
-  .game-tabs small {
+  .game-tabs .tcg-line-tag {
     font-size: 7px;
   }
   .radar-toolbar {

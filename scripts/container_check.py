@@ -7,6 +7,7 @@ Credentials are only read inside the existing container, never shell arguments.
 """
 import argparse
 from pathlib import Path
+import re
 import shutil
 import subprocess
 
@@ -20,6 +21,12 @@ def main():
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     docker = shutil.which("docker")
+    if docker and shutil.which("wsl"):
+        native = subprocess.run([docker, "ps", "-aq", "--filter", "label=com.docker.compose.project=joyboyz-tcg-radar"], capture_output=True, text=True)
+        if not any(re.fullmatch(r"[a-f0-9]{12,64}", line) for line in native.stdout.splitlines()):
+            ubuntu = subprocess.run(["wsl", "-d", "Ubuntu", "-u", "root", "--exec", "docker", "ps", "-aq", "--filter", "label=com.docker.compose.project=joyboyz-tcg-radar"], capture_output=True, text=True)
+            if ubuntu.returncode == 0 and any(re.fullmatch(r"[a-f0-9]{12,64}", line) for line in ubuntu.stdout.splitlines()):
+                docker = None
     if docker:
         command = [docker]
     elif shutil.which("wsl"):

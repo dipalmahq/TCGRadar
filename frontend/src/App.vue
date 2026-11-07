@@ -34,7 +34,6 @@ import {
   Layers,
   LogOut,
   Menu,
-  Radio,
   Check,
   Clock3,
   ExternalLink,
@@ -316,6 +315,16 @@ function gameName(id: number | null) {
   return game?.slug === "dragon-ball-fusion-world"
     ? "Dragon Ball · Fusion World"
     : game?.name || "Alle TCGs";
+}
+function gameLabel(game: { slug: string; name: string }) {
+  return game.slug.startsWith("dragon-ball-") ? "Dragon Ball" : game.name;
+}
+function gameLine(slug: string) {
+  return slug === "dragon-ball-fusion-world"
+    ? "FW"
+    : slug === "dragon-ball-masters"
+      ? "Masters"
+      : "";
 }
 function typeLabel(value: string) {
   return types[value] || "Typ unbekannt";
@@ -746,7 +755,14 @@ onUnmounted(() => {
     <div class="login-orbit"><Radar :size="120" stroke-width="0.7" /></div>
     <form class="login-card" @submit.prevent="login">
       <div class="brand">
-        <span class="brand-icon"><Radar :size="25" /></span>
+        <span class="brand-icon"
+          ><img
+            src="/dragon-radar.png"
+            width="52"
+            height="52"
+            alt=""
+            aria-hidden="true"
+        /></span>
         <div>JoyBoyz<span>TCG RADAR</span></div>
       </div>
       <span class="eyebrow">DEIN TEAM. DEIN RADAR.</span>
@@ -777,7 +793,14 @@ onUnmounted(() => {
     ></button>
     <aside class="sidebar" :class="{ expanded: mobileMenu }">
       <a class="brand" href="#" @click.prevent="section = 'radar'"
-        ><span class="brand-icon"><Radar :size="25" /></span>
+        ><span class="brand-icon"
+          ><img
+            src="/dragon-radar.png"
+            width="52"
+            height="52"
+            alt=""
+            aria-hidden="true"
+        /></span>
         <div>JoyBoyz<span>TCG RADAR</span></div></a
       >
       <div class="workspace-chip">
@@ -831,22 +854,32 @@ onUnmounted(() => {
         <button
           v-for="game in meta.games"
           :key="game.slug"
+          :aria-label="
+            game.slug === 'dragon-ball-fusion-world'
+              ? 'Dragon Ball Fusion World'
+              : game.name
+          "
           @click="setGame(game.slug)"
         >
           <span class="game-dot" :class="gameClass(game.slug)"></span
-          >{{ game.name
+          >{{ gameLabel(game)
           }}<span
-            v-if="game.slug === 'dragon-ball-fusion-world'"
-            class="fw-label"
-            >FW</span
+            v-if="gameLine(game.slug)"
+            class="tcg-line-tag"
+            :class="{ 'masters-tag': game.slug === 'dragon-ball-masters' }"
+            >{{ gameLine(game.slug) }}</span
           ><ChevronRight :size="14" />
         </button>
       </div>
       <div class="sidebar-callout">
-        <Radio :size="23" /><strong
-          >Ein guter Fund.<br />Ein besserer Stream.</strong
-        >
-        <p>Deine Wunschprodukte im Blick. Auch nach dem Stream.</p>
+        <img
+          class="straw-hat"
+          src="/straw-hat.svg"
+          width="29"
+          height="23"
+          alt=""
+          aria-hidden="true"
+        /><strong>Ein guter Fund.<br />Ein besserer Stream.</strong>
         <button @click="openRule()">
           Beobachtung erstellen <Plus :size="15" />
         </button>
@@ -977,14 +1010,24 @@ onUnmounted(() => {
               ><button
                 v-for="game in meta.games"
                 :key="game.slug"
+                :aria-label="
+                  game.slug === 'dragon-ball-fusion-world'
+                    ? 'Dragon Ball Fusion World'
+                    : game.name
+                "
                 :class="{ selected: filters.game.includes(game.slug) }"
                 :aria-pressed="filters.game.includes(game.slug)"
                 @click="toggleGame(game.slug)"
               >
                 <span class="game-dot" :class="gameClass(game.slug)"></span
-                >{{ game.name
-                }}<small v-if="game.slug === 'dragon-ball-fusion-world'"
-                  >FW</small
+                >{{ gameLabel(game)
+                }}<small
+                  v-if="gameLine(game.slug)"
+                  class="tcg-line-tag"
+                  :class="{
+                    'masters-tag': game.slug === 'dragon-ball-masters',
+                  }"
+                  >{{ gameLine(game.slug) }}</small
                 >
               </button>
             </div>
