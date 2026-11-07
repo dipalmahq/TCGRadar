@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+.venv
+.uv-cache
+.pnpm-store
+frontend/node_modules
+frontend/dist
+**/__pycache__
+**/.pytest_cache
+data
+test-results
+backend/tests
+*.db
+*.sqlite*

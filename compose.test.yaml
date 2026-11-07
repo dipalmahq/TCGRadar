@@ -1,0 +1,44 @@
+# Isolated acceptance tests. Use a separate project name, never the app's DB.
+services:
+  test-db:
+    image: postgres:16-bookworm
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: radar_test
+      POSTGRES_USER: radar_test
+      POSTGRES_PASSWORD: acceptance_test_only
+    tmpfs:
+      - /var/lib/postgresql/data:size=512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radar_test -d radar_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  tests:
+    image: joyboyz-tcg-radar:local
+    profiles: ["test"]
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      RADAR_ENVIRONMENT: development
+      RADAR_DATABASE_URL: postgresql+psycopg://radar_test:acceptance_test_only@test-db:5432/radar_test
+      RADAR_TEST_DATABASE_URL: postgresql+psycopg://radar_test:acceptance_test_only@test-db:5432/radar_test
+      RADAR_API_KEY: ""
+      RADAR_NOTIFICATIONS_ENABLED: "false"
+      RADAR_DISCORD_WEBHOOK_URL: ""
+      RADAR_TELEGRAM_BOT_TOKEN: ""
+      RADAR_TELEGRAM_CHAT_ID: ""
+      RADAR_SHOPS_FILE: /app/config/shops.ci.json
+    volumes:
+      - ./backend/tests:/app/tests:ro
+    command: ["python", "-m", "pytest", "/app/tests", "--basetemp=/tmp/pytest-acceptance", "--tb=short", "-q", "-p", "no:cacheprovider"]
+    depends_on:
+      test-db:
+        condition: service_healthy

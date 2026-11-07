@@ -1,0 +1,20 @@
+{
+  "products": [
+    {
+      "id": 101,
+      "title": "One Piece Card Game OP17 Display (24 Booster) [ENG]",
+      "handle": "one-piece-op17-display",
+      "body_html": "<p>Original versiegelt. Enthält 24 Booster.</p>",
+      "tags": ["Onepiece", "Booster Display", "englisch"],
+      "product_type": "Booster Display",
+      "variants": [{"id": 201, "title": "Default Title", "available": true, "price": "129.95"}]
+    },
+    {
+      "id": 102,
+      "title": "Dragon Ball Super Fusion World FB11 Display [ENG] Vorbestellung",
+      "handle": "fusion-world-fb11",
+      "tags": ["Vorbestellung"],
+      "variants": [{"id": 202, "title": "Default Title", "available": true, "price": "99.90"}]
+    }
+  ]
+}

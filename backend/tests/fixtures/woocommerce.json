@@ -1,0 +1,23 @@
+{
+  "parent": {
+    "id": 301, "name": "Pokemon Testset Booster Display", "type": "variable",
+    "permalink": "https://fixture.example/produkt/pokemon-testset/",
+    "prices": {"price": "499", "currency_code": "EUR", "currency_minor_unit": 2, "price_range": {"min_amount": "499", "max_amount": "13999"}},
+    "is_in_stock": true, "is_purchasable": true,
+    "short_description": "Ein Display enthält 36 Booster.",
+    "attributes": [{"name": "Sprache", "terms": [{"name": "Deutsch"}]}],
+    "variations": [{"id": 302, "attributes": [{"name": "Auswahl", "value": "booster"}]}, {"id": 303, "attributes": [{"name": "Auswahl", "value": "display"}]}]
+  },
+  "booster": {
+    "id": 302, "parent": 301, "type": "variation", "name": "Pokemon Testset Booster Display - Booster",
+    "permalink": "https://fixture.example/produkt/pokemon-testset/?variation_id=302",
+    "prices": {"price": "499", "currency_code": "EUR", "currency_minor_unit": 2},
+    "is_in_stock": true, "is_purchasable": true
+  },
+  "display": {
+    "id": 303, "parent": 301, "type": "variation", "name": "Pokemon Testset Booster Display - Display",
+    "permalink": "https://fixture.example/produkt/pokemon-testset/?variation_id=303",
+    "prices": {"price": "13999", "currency_code": "EUR", "currency_minor_unit": 2},
+    "is_in_stock": false, "is_purchasable": true
+  }
+}

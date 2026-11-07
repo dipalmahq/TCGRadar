@@ -1,0 +1,91 @@
+[
+  {
+    "slug": "fantasiacards",
+    "name": "FantasiaCards",
+    "base_url": "https://fantasiacards.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 50,
+      "max_pages": 3,
+      "currency": "EUR"
+    }
+  },
+  {
+    "slug": "house-of-cards",
+    "name": "House of Cards & Games",
+    "base_url": "https://house-of-cards-and-games.de",
+    "country": "DE",
+    "adapter": "woocommerce",
+    "interval_seconds": 900,
+    "config": {
+      "page_size": 10,
+      "max_pages": 1,
+      "searches": [
+        "Pokemon",
+        "One Piece",
+        "Fusion World",
+        "Masters",
+        "Dragon Ball"
+      ]
+    }
+  },
+  {
+    "slug": "senpai-cards",
+    "name": "Senpai-Cards",
+    "base_url": "https://senpai-cards.de",
+    "country": "DE",
+    "adapter": "woocommerce",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 10,
+      "max_pages": 1,
+      "searches": [
+        "One Piece",
+        "Fusion World",
+        "Pokemon",
+        "Masters",
+        "Dragon Ball"
+      ]
+    }
+  },
+  {
+    "slug": "johto-cards",
+    "name": "Johto-Cards",
+    "base_url": "https://johto-cards.de",
+    "country": "DE",
+    "adapter": "woocommerce",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 10,
+      "max_pages": 1,
+      "searches": [
+        "Pokemon",
+        "One Piece",
+        "Fusion World",
+        "Masters",
+        "Dragon Ball"
+      ]
+    }
+  },
+  {
+    "slug": "bulkparadise",
+    "name": "BulkParadise TCG",
+    "base_url": "https://bulkparadise-tcg.de",
+    "country": "DE",
+    "adapter": "woocommerce",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 10,
+      "max_pages": 1,
+      "searches": [
+        "Pokemon",
+        "One Piece",
+        "Fusion World",
+        "Masters",
+        "Dragon Ball"
+      ]
+    }
+  }
+]
