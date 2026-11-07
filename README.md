@@ -20,6 +20,10 @@ Die Sidebar ist auf niedrigen Bildschirmen scrollbar.
 - Automatische Entdeckung bei **FantasiaCards (Shopify)** sowie **House of Cards &
   Games, Senpai-Cards, Johto-Cards und BulkParadise TCG (WooCommerce Store API)**;
   alle fünf Quellen live geprüft.
+- Zusätzlich **New Era TCG, Gem Cards, Xtreme Hits, cardcosmos und YONKO TCG**
+  über gezielte Shopify-Kollektionen; damit zehn konfigurierte Händler.
+  Je drei Produktvarianten wurden gegen frische Detailabrufe geprüft.
+  Umfang und Grenzen: [Händlererweiterung](docs/ADDITIONAL-MERCHANTS.md).
 - Getrennte Variantenpreise und Bestände, auch für Booster/Display-Auswahlartikel.
 - Separater Worker mit regelmäßigen Abrufen, Shop-Leases, HTTP-Abständen,
   begrenzten Wiederholungen und Backoff bei Fehlern.
@@ -233,6 +237,7 @@ Nachrichten zu vermeiden. Der Status lautet dann `uncertain`.
 | `RADAR_SHOPS_FILE` | Pfad der Shop-Konfiguration; Vorgabe `config/shops.json` |
 | `RADAR_BIND_ADDRESS` / `RADAR_PORT` | Compose-Bindung; Vorgabe `127.0.0.1:8000` |
 | `RADAR_DOMAIN` | Nur für die optionale Ubuntu-/Caddy-Konfiguration |
+| `COMPOSE_FILE` | Auf dem JoyBoyz-Server: `compose.yaml:compose.traefik.yaml` |
 
 Schlüssel und Kanal-Zugangsdaten werden nicht über die API ausgegeben. Das
 Dashboard hält den eingegebenen Team-Schlüssel nur für die Browser-Sitzung.
@@ -300,13 +305,14 @@ python scripts/verify_live.py
 
 ## Ubuntu und Produktionsfreigabe
 
-Die Dateien sind für einen späteren Ubuntu-Server vorbereitet. **Es wurde nichts
-produktiv deployed oder öffentlich veröffentlicht.** Vorgehen und Backup:
-[Deployment-Anleitung](docs/DEPLOYMENT.md).
+Der JoyBoyz-Server verwendet die zusätzliche `compose.traefik.yaml` mit dem
+vorhandenen HTTPS-Proxy: Dashboard unter **https://radar.joyboyz.de**, Hauptdomain
+und `www` leiten dorthin weiter. Der Zugriff auf Daten erfordert den Team-Schlüssel.
+Einrichtung, Betrieb und Backups: [Deployment-Anleitung](docs/DEPLOYMENT.md).
 
 ## Bewusste Grenzen und nächste Schritte
 
-- Fünf Händler, begrenzte Katalogfenster; weitere gute DE/EU-Quellen liefern den
+- Zehn Händler, begrenzte Katalogfenster; weitere gute DE/EU-Quellen liefern den
   größten zusätzlichen Nutzen.
 - Kein vollständiger Sealed-Katalog. Fehlende Packzahlen/Produktmerkmale werden
   nicht geraten. Im ersten Live-Ausschnitt lagen noch keine sicher zugeordneten

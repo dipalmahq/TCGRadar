@@ -1,7 +1,48 @@
-# Ubuntu: nach Produktionsfreigabe
+# Ubuntu-Deployment
 
-Es ist noch kein Server konfiguriert und kein Deployment durchgeführt worden.
-Die folgende Anleitung ist der vorbereitete Weg für die Freigabe.
+## JoyBoyz auf dem vorhandenen Traefik-Server
+
+Auf diesem Server läuft das Projekt separat unter
+`/home/gabriel/dipalmaHQ/TCGRadar`. Die private `.env` enthält
+`COMPOSE_FILE=compose.yaml:compose.traefik.yaml`, sodass auch die vorhandenen
+Prüfskripte und normale `docker compose`-Befehle die richtige Konfiguration nutzen.
+Compose v2.24.4 oder neuer ist für `!reset` erforderlich.
+
+- `https://radar.joyboyz.de`: Dashboard und API mit Team-Schlüssel.
+- `https://joyboyz.de` und `https://www.joyboyz.de`: permanente Weiterleitungen
+  zum Radar, einschließlich Pfad und Query-String.
+- Der bestehende Traefik übernimmt HTTP → HTTPS und Let's Encrypt mit seinem
+  vorhandenen Resolver `letsencrypt`. Nur die API hängt zusätzlich am externen
+  Netzwerk `proxy`; PostgreSQL und Worker bleiben im Projektnetzwerk.
+- Es werden keine Hostports veröffentlicht. `compose.prod.yaml` ist die
+  alternative Caddy-Konfiguration und darf hier nicht zusätzlich geladen werden.
+- Zugangsdaten werden auf dem Server generiert und bleiben in `.env` (Modus 600).
+  Benachrichtigungen bleiben zunächst deaktiviert.
+
+```bash
+cd /home/gabriel/dipalmaHQ/TCGRadar
+docker compose config --quiet
+docker compose up -d --build
+python3 scripts/container_check.py
+```
+
+Für ein neues Checkout zuerst `python3 scripts/setup_env.py` ausführen und die
+oben genannte `COMPOSE_FILE`-Zeile in `.env` ergänzen.
+
+`python3 scripts/backup.py` sichert PostgreSQL als Custom-Format-Dump und die
+Deployment-Konfiguration inklusive `.env` unter
+`/home/gabriel/dipalmaHQ/backups/tcgradar/<UTC-Zeitstempel>/`.
+Die Verzeichnisse sind privat; unvollständige Backups werden entfernt.
+Backups enthalten Zugangsdaten und gehören nicht ins Repository.
+Der Benutzer-Cronjob aus `deploy/backup.cron` läuft täglich um 04:15 Uhr
+Serverzeit (Europe/Berlin); Ausgabe unter `backups/tcgradar/backup.log`.
+Die Sicherungen liegen auf demselben Server; für Schutz bei Serververlust ist
+zusätzlich eine externe Kopie erforderlich. Es gibt keine automatische Löschung.
+
+Zur Wiederherstellung in eine separate, leere Datenbank den Abschnitt unten
+verwenden. Vor Updates oder Schemaänderungen ein frisches Backup erstellen.
+
+## Alternative: neuer Ubuntu-Server
 
 1. Auf Ubuntu Docker Engine und das Compose-v2-Plugin aus den offiziellen Quellen
    einrichten. Projekt aus dem späteren GitHub-Repository auschecken oder die
@@ -74,9 +115,8 @@ sich auf das Backup verlässt.
 ## GitHub
 
 Ein Workflow liegt unter `.github/workflows/ci.yml`. Er führt Backendtests gegen
-einen PostgreSQL-Service, Frontend-Build und Container-Smoke-Test aus. Es wurde
-noch kein Remote-Repository erstellt oder Code hochgeladen. Bei eingerichtetem
-GitHub-Zugang kann ein **privates** Repository verbunden und gepusht werden.
+einen PostgreSQL-Service, Frontend-Build und Container-Smoke-Test aus.
+Repository: `git@github.com:dipalmahq/TCGRadar.git`.
 Ein Push führt nur die CI aus; es gibt keinen automatischen Produktionsdeploy.
 
 ## Betrieb und Einschränkungen

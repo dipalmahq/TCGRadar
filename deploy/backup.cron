@@ -1,0 +1,2 @@
+# JoyBoyz PostgreSQL backup: daily at 04:15 in the server's timezone.
+15 4 * * * /usr/bin/python3 /home/gabriel/dipalmaHQ/TCGRadar/scripts/backup.py >> /home/gabriel/dipalmaHQ/backups/tcgradar/backup.log 2>&1

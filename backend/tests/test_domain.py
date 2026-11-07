@@ -52,6 +52,17 @@ def test_accessories_singles_and_open_products_are_excluded(title):
     assert classify(source(title), "a") is None
 
 
+@pytest.mark.parametrize("title", [
+    "Pokemon Test Red Collection AOG 8.5 NM-Mint",
+    "Pokemon Test #070/066 1st Edition Red Collection",
+    "One Piece Premium Card Collection PSA 10",
+    "Pokemon Booster Design Graded CGC 9",
+    "Pokemon Test Collection gegradete Karte",
+])
+def test_grading_and_card_numbers_override_sealed_product_words(title):
+    assert classify(source(title), "a") is None
+
+
 def test_gtin_checksum_and_unknown_language():
     assert valid_gtin("4006381333931") == "04006381333931"
     assert valid_gtin("4006381333932") is None

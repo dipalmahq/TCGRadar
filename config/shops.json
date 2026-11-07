@@ -87,5 +87,110 @@
         "Dragon Ball"
       ]
     }
+  },
+  {
+    "slug": "newera-tcg",
+    "name": "New Era TCG",
+    "base_url": "https://newera-tcg.shop",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 50,
+      "max_pages": 2,
+      "currency": "EUR",
+      "collections": [
+        "displays",
+        "booster",
+        "displays-1",
+        "booster-1",
+        "displays-2",
+        "booster-2"
+      ]
+    }
+  },
+  {
+    "slug": "gemcards",
+    "name": "Gem Cards",
+    "base_url": "https://gemcards.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 50,
+      "max_pages": 2,
+      "currency": "EUR",
+      "collections": [
+        "one-piece-displays",
+        "one-piece-booster-englisch",
+        "pokemon-displays",
+        "pokemon-booster",
+        "dragon-ball-fusion-world",
+        "dragon-ball-masters"
+      ]
+    }
+  },
+  {
+    "slug": "xtremehits",
+    "name": "Xtreme Hits",
+    "base_url": "https://www.xtremehits.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 50,
+      "max_pages": 2,
+      "currency": "EUR",
+      "collections": [
+        "pokemon-displays",
+        "pokemon-booster-packs",
+        "pokemon-top-trainer-boxen",
+        "pokemon-blister-packs",
+        "pokemon-kollektionen",
+        "pokemon-tins-und-sammelkoffer"
+      ]
+    }
+  },
+  {
+    "slug": "cardcosmos",
+    "name": "cardcosmos",
+    "base_url": "https://cardcosmos.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 50,
+      "max_pages": 2,
+      "currency": "EUR",
+      "collections": [
+        "pokemon-booster-displays",
+        "pokemon-booster-kaufen",
+        "pokemon-elite-trainer-boxen",
+        "one-piece-booster-displays",
+        "one-piece-einzelbooster",
+        "dragon-ball"
+      ]
+    }
+  },
+  {
+    "slug": "yonko-tcg",
+    "name": "YONKO TCG",
+    "base_url": "https://yonko-tcg.com",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 1200,
+    "config": {
+      "page_size": 50,
+      "max_pages": 2,
+      "currency": "EUR",
+      "collections": [
+        "one-piece-displays",
+        "one-piece-boosterpacks",
+        "pokemon-displays",
+        "pokemon-booster",
+        "pokemon-boxen",
+        "dragon-ball-display"
+      ]
+    }
   }
 ]

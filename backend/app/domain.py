@@ -136,6 +136,12 @@ class ProductIdentity:
 
 def classify(source: SourceOffer, merchant_slug: str) -> ProductIdentity | None:
     title = normalized(source.title)
+    # Graded singles can contain set names such as "Red Collection" or "Booster".
+    # Their card numbers and grading labels take precedence over those words.
+    if re.search(r"\b\d{1,3}\s*/\s*\d{1,3}\b", source.title) or re.search(
+        r"\b(?:graded|gegradet\w*|slabs?)\b|\b(?:psa|bgs|cgc|aog|sgc)\s+\d", title
+    ):
+        return None
     if re.search(r"\b(?:sleeves?|spielmatte|playmat|deckbox|binder|album|acrylcase|acrylic|acryl|schutzhulle|schutzbox|display protector|einzelkarte|single card|live break|rip and ship|rip ship|repack|mystery|geoffnet|opened|unsealed|resealed|gebraucht|used)\b", title):
         return None
     # A specific product title takes precedence over broad mixed shop categories.

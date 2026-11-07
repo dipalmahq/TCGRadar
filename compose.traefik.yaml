@@ -1,0 +1,28 @@
+# Existing Traefik owns ports 80/443 and the external "proxy" network.
+# Use with compose.yaml; do not combine with compose.prod.yaml (Caddy).
+services:
+  api:
+    ports: !reset []
+    networks:
+      - default
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.joyboyz-radar.loadbalancer.server.port: "8000"
+      traefik.http.routers.joyboyz-radar.rule: Host(`radar.joyboyz.de`)
+      traefik.http.routers.joyboyz-radar.entrypoints: websecure
+      traefik.http.routers.joyboyz-radar.tls.certresolver: letsencrypt
+      traefik.http.routers.joyboyz-radar.service: joyboyz-radar
+      traefik.http.routers.joyboyz-home.rule: Host(`joyboyz.de`) || Host(`www.joyboyz.de`)
+      traefik.http.routers.joyboyz-home.entrypoints: websecure
+      traefik.http.routers.joyboyz-home.tls.certresolver: letsencrypt
+      traefik.http.routers.joyboyz-home.service: joyboyz-radar
+      traefik.http.routers.joyboyz-home.middlewares: joyboyz-to-radar
+      traefik.http.middlewares.joyboyz-to-radar.redirectregex.regex: '^https?://(?:www\.)?joyboyz\.de(.*)'
+      traefik.http.middlewares.joyboyz-to-radar.redirectregex.replacement: 'https://radar.joyboyz.de$${1}'
+      traefik.http.middlewares.joyboyz-to-radar.redirectregex.permanent: "true"
+
+networks:
+  proxy:
+    external: true
