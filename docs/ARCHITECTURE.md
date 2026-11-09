@@ -104,9 +104,7 @@ des Empfängers nicht zugesichert.
 
 Abrufe bleiben auf die konfigurierten HTTPS-Ursprünge beschränkt. Produktlinks
 können keinen beliebigen internen Host hinzufügen; Weiterleitungen auf fremde
-Ursprünge werden abgewiesen. `robots.txt`, Request-Abstände, Antwortgrößen und
-ein Request-Budget werden berücksichtigt. Kein Login, CAPTCHA-Umgehen,
-Proxy-Rotation, Auto-Kauf oder Warenkorbtest wird ausgeführt.
+Ursprünge werden abgewiesen.
 
 Ein begrenzter Katalogausschnitt beweist bei Nichtauftauchen keinen Ausverkauf.
 Abruffehler machen Bestand unbekannt, erhalten aber den letzten bekannten Zustand,
