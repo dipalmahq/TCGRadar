@@ -22,8 +22,8 @@ Compose v2.24.4 oder neuer ist für `!reset` erforderlich.
 ```bash
 cd /home/gabriel/dipalmaHQ/TCGRadar
 docker compose config --quiet
-docker compose up -d --build
-python3 scripts/container_check.py
+docker compose ps
+python3 scripts/deploy.py status
 ```
 
 Für ein neues Checkout zuerst `python3 scripts/setup_env.py` ausführen und die
@@ -77,21 +77,55 @@ und HTTPS beziehungsweise dem vorhandenen privaten Zugang betreiben.
 
 ## Update
 
+Seit dem 09.11.2026 werden Änderungen über GitHub ausgeliefert:
+
+1. Lokal ändern und prüfen; nach Händleränderungen die Worker-Konfiguration mit
+   `python scripts/generate_merchant_workers.py` regenerieren und mitcommitten.
+2. Änderungen committen und nach `main` pushen.
+3. `.github/workflows/ci.yml` prüft Backend inklusive PostgreSQL, Frontend und
+   Container. Erst wenn beide Prüfjobs erfolgreich sind, startet der Deployjob.
+4. Der Deployjob sendet ausschließlich `deploy <vollständiger-commit-sha>` über
+   SSH. Der Server akzeptiert nur den aktuellen `origin/main`-Commit, lehnt einen
+   schmutzigen Checkout ab und verhindert überlappende Deployments mit einer Sperre.
+5. Vor dem Update werden Datenbank und Deploymentkonfiguration privat gesichert.
+   Das Image wird auf dem Server aus genau diesem geprüften Commit gebaut und
+   als `joyboyz-tcg-radar:<commit-sha>` gespeichert. Es trägt zusätzlich das
+   OCI-Label `org.opencontainers.image.revision`.
+6. API und Händler-/Alarm-Worker werden für Migrationen angehalten; PostgreSQL
+   bleibt aktiv. Danach starten die Anwendungsdienste mit dem neuen Image.
+7. Der Deploy prüft Containerzustände, Team-Zugang innerhalb des Containers,
+   öffentliche Startseite, Healthcheck und den Schutz der Angebots-API. Die CI
+   prüft den öffentlichen Healthcheck zusätzlich.
+
+Der Servercheckout bleibt auf dem veröffentlichten Commit fixiert (detached
+HEAD). Keine Quelltexte oder gebauten Dateien direkt auf dem Server bzw. in
+Containern verändern. Ein Push nach GitHub startet automatisch die Veröffentlichung;
+PRs und andere Branches werden nur geprüft. Bereits überholte Commits werden übersprungen.
+
+Status und Rückwechsel per administrativem SSH:
+
 ```bash
-git pull --ff-only
-python3 scripts/generate_merchant_workers.py
-docker compose build
-python3 scripts/backup.py
-docker compose stop
-docker compose up -d --wait db
-docker compose run --rm migrate
-docker compose up -d
+cd /home/gabriel/dipalmaHQ/TCGRadar
+python3 scripts/deploy.py status
+python3 scripts/deploy.py rollback
 ```
 
-Vor Schemaänderungen ein Backup erstellen. Die initiale Migration ist für
-PostgreSQL und SQLite angelegt; weitere Änderungen bekommen eine neue
-Alembic-Migration. Nicht einfach Modellklassen verändern und auf `create_all`
-vertrauen.
+`rollback` setzt auf den unmittelbar vorherigen Release zurück. Vorhandene
+Images werden nicht automatisch gelöscht. Ein fehlgeschlagener Build lässt die
+laufende Anwendung unangetastet. Schlägt ein umgeschalteter Release fehl, wird
+das vorherige Image automatisch wieder gestartet, sofern die Alembic-Version
+unverändert ist.
+
+Nach einer Schemaänderung erfolgt kein automatischer Datenbank-Downgrade oder
+Restore. In diesem Fall wird die Anwendung gestoppt und die private
+Sicherungsreferenz ausgegeben. Dann vorwärts reparieren oder die Datenbank
+bewusst aus dem Backup wiederherstellen. Neue Schemaänderungen benötigen eine
+Alembic-Migration; nicht auf `create_all` vertrauen.
+
+Die private `.env` enthält den aktiven `RADAR_IMAGE`-Verweis. Releasezustand und
+Wiederherstellungsmetadaten liegen unter
+`/home/gabriel/dipalmaHQ/backups/tcgradar/deployments/`; `current.json` benennt
+den aktiven Commit und das Image. Diese Dateien werden nicht nach Git übernommen.
 
 ## Backup und Wiederherstellung
 
@@ -122,7 +156,32 @@ sich auf das Backup verlässt.
 Ein Workflow liegt unter `.github/workflows/ci.yml`. Er führt Backendtests gegen
 einen PostgreSQL-Service, Frontend-Build und Container-Smoke-Test aus.
 Repository: `git@github.com:dipalmahq/TCGRadar.git`.
-Ein Push führt nur die CI aus; es gibt keinen automatischen Produktionsdeploy.
+Pushes nach `main` und manuelle Workflowstarts auf `main` deployen nach allen
+erfolgreichen Prüfungen automatisch. Der Deploymentverlauf steht in GitHub
+Actions und in der Umgebung `production`. Die Deploymentgruppe
+`joyboyz-production` wird nicht während eines laufenden Updates abgebrochen.
+
+Vier verschlüsselte Repository-Secrets sind eingerichtet:
+
+- `DEPLOY_SSH_HOST`: Produktionshost.
+- `DEPLOY_SSH_USER`: Deploymentbenutzer.
+- `DEPLOY_SSH_KEY`: eigener Ed25519-Schlüssel ausschließlich für diesen Ablauf.
+- `DEPLOY_SSH_KNOWN_HOSTS`: über den vorhandenen vertrauenswürdigen SSH-Zugang
+  gelesener Hostschlüssel; die CI verwendet strikte Hostprüfung.
+
+Der öffentliche Deployment-Schlüssel ist in `~/.ssh/authorized_keys` mit
+`restrict,command="/home/gabriel/.local/bin/joyboyz-deploy-ssh"` beschränkt.
+Der installierte Dispatcher stammt aus `deploy/ssh-entrypoint.py`, akzeptiert
+keine beliebigen Shellkommandos und lädt das Deployskript ausschließlich aus
+dem aktuellen `main`-Commit. Das funktioniert auch nach einem Rückwechsel auf
+eine ältere Version ohne eigenes Deployskript. Die Einschränkung wurde bei der
+Einrichtung mit einem abgewiesenen Shellkommando geprüft.
+
+Bei einer Schlüsselrotation einen neuen separaten Schlüssel erzeugen, nur diesen
+Eintrag in `authorized_keys` ersetzen und `DEPLOY_SSH_KEY` aktualisieren.
+Keine privaten Schlüssel, Server-`.env` oder Datenbankdumps ins Repository legen.
+
+Die dauerhaften Arbeitsregeln für Codex stehen in der Projekt-`AGENTS.md`.
 
 ## Betrieb und Einschränkungen
 

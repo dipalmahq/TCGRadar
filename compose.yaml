@@ -1,7 +1,7 @@
 name: joyboyz-tcg-radar
 
 x-app: &app
-  image: joyboyz-tcg-radar:local
+  image: ${RADAR_IMAGE:-joyboyz-tcg-radar:local}
   build: .
   init: true
   restart: unless-stopped

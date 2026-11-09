@@ -80,6 +80,12 @@ erhielt Daten und Zustellstatus ohne erneuten Versand. Einzelheiten:
 
 ## Start mit Docker Compose
 
+Produktionsänderungen werden nach einem Push auf `main` automatisch ausgeliefert,
+sobald Backendtests, Frontendbuild und Containerprüfung erfolgreich sind.
+Der Deploy erstellt ein Backup, verwendet ein mit dem Commit gekennzeichnetes
+Image und prüft die Live-Seite. [Ablauf und Wiederherstellung](docs/DEPLOYMENT.md).
+Projektregeln für künftige Codex-Chats stehen in [AGENTS.md](AGENTS.md).
+
 Voraussetzungen: Docker Engine/Desktop mit Compose v2; zum Erstellen der `.env`
 Python 3.12+ oder eine manuell befüllte Kopie von `.env.example`.
 

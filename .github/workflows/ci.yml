@@ -2,6 +2,7 @@ name: Test and build
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -47,6 +48,8 @@ jobs:
       - run: pnpm --dir frontend install --frozen-lockfile
       - run: pnpm --dir frontend run build
       - run: python3 scripts/setup_env.py
+      - name: Verify generated merchant configuration is committed
+        run: git diff --exit-code -- compose.workers.yaml
       - name: Keep container smoke test independent of external shops
         run: cp config/shops.ci.json config/shops.json
       - run: python3 scripts/generate_merchant_workers.py
@@ -58,3 +61,43 @@ jobs:
       - run: curl --fail --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8000/api/health
       - if: always()
         run: docker compose down -v
+
+  deploy:
+    name: Deploy production
+    needs: [backend, frontend-and-container]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment:
+      name: production
+      url: https://radar.joyboyz.de
+    concurrency:
+      group: joyboyz-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy the tested main commit over restricted SSH
+        id: deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER" && test -n "$DEPLOY_KEY" && test -n "$DEPLOY_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/joyboyz_deploy"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/joyboyz_deploy" "$HOME/.ssh/known_hosts"
+          trap 'rm -f "$HOME/.ssh/joyboyz_deploy"' EXIT
+          ssh -i "$HOME/.ssh/joyboyz_deploy" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 "$DEPLOY_USER@$DEPLOY_HOST" "deploy $GITHUB_SHA" | tee "$RUNNER_TEMP/joyboyz-deploy.log"
+          if grep -q '^Skipped superseded commit;' "$RUNNER_TEMP/joyboyz-deploy.log"; then
+            echo 'skipped=true' >> "$GITHUB_OUTPUT"
+            echo 'Skipped superseded commit; the latest main run owns deployment.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Verify public health after deployment
+        if: steps.deploy.outputs.skipped != 'true'
+        run: |
+          curl --fail --retry 6 --retry-delay 5 --retry-connrefused https://radar.joyboyz.de/api/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' https://radar.joyboyz.de/api/offers)" = 401
+          printf 'Deployed commit `%s` to https://radar.joyboyz.de\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
