@@ -18,6 +18,9 @@ def make_engine(url: str):
     options = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         options["connect_args"] = {"check_same_thread": False, "timeout": 30}
+    else:
+        settings = get_settings()
+        options.update(pool_size=settings.database_pool_size, max_overflow=settings.database_max_overflow, pool_timeout=15)
     engine = create_engine(url, **options)
     if url.startswith("sqlite"):
         @event.listens_for(engine, "connect")

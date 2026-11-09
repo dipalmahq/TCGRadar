@@ -4,7 +4,7 @@
 
 Auf diesem Server läuft das Projekt separat unter
 `/home/gabriel/dipalmaHQ/TCGRadar`. Die private `.env` enthält
-`COMPOSE_FILE=compose.yaml:compose.traefik.yaml`, sodass auch die vorhandenen
+`COMPOSE_FILE=compose.yaml:compose.traefik.yaml:compose.workers.yaml`, sodass auch die vorhandenen
 Prüfskripte und normale `docker compose`-Befehle die richtige Konfiguration nutzen.
 Compose v2.24.4 oder neuer ist für `!reset` erforderlich.
 
@@ -65,9 +65,9 @@ Die API bleibt bei der Standardkonfiguration nur über Loopback veröffentlicht;
 PostgreSQL hat keinen veröffentlichten Port.
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml config --quiet
+docker compose -f compose.yaml -f compose.prod.yaml -f compose.workers.yaml config --quiet
 # Erst nach Produktionsfreigabe:
-docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+docker compose -f compose.yaml -f compose.prod.yaml -f compose.workers.yaml up -d --build
 ```
 
 Alternativ kann ein vorhandener HTTPS-Reverse-Proxy an `127.0.0.1:8000` weiterleiten.
@@ -79,7 +79,11 @@ und HTTPS beziehungsweise dem vorhandenen privaten Zugang betreiben.
 
 ```bash
 git pull --ff-only
+python3 scripts/generate_merchant_workers.py
 docker compose build
+python3 scripts/backup.py
+docker compose stop
+docker compose up -d --wait db
 docker compose run --rm migrate
 docker compose up -d
 ```
@@ -103,9 +107,10 @@ API und Worker stoppen. Das folgende Beispiel ist für eine **leere** Ziel-
 Datenbank gedacht; es enthält kein automatisches Löschen bestehender Daten:
 
 ```bash
-docker compose stop api worker
+docker compose stop
+docker compose up -d --wait db
 docker compose exec -T db pg_restore -U radar -d radar < backups/radar.dump
-docker compose start api worker
+docker compose up -d
 ```
 
 Zusätzlich `.env` und `config/shops.json` sicher außerhalb des Repositorys
@@ -121,7 +126,9 @@ Ein Push führt nur die CI aus; es gibt keinen automatischen Produktionsdeploy.
 
 ## Betrieb und Einschränkungen
 
-- Vorgesehen ist ein Worker. Während eines Shopabrufs verhindert eine
+- Vorgesehen sind ein Worker je Händler und ein separater Alarm-Worker;
+  [Planung, Migration und Prüfintervalle](MERCHANT-WORKERS.md).
+  Während eines Shopabrufs verhindert eine
   PostgreSQL-Advisory-Sperre überlappende Prüfungen desselben Händlers. Sie wird
   auch bei hartem Abbruch mit der Verbindung freigegeben. Verwaiste Zeitmarkierungen
   blockieren den nächsten Worker dadurch nicht mehr.

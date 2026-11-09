@@ -58,9 +58,13 @@ class Merchant(Base):
     error_count: Mapped[int] = mapped_column(Integer, default=0)
     last_offer_count: Mapped[int] = mapped_column(Integer, default=0)
     last_scanned_count: Mapped[int] = mapped_column(Integer, default=0)
+    crawl_state: Mapped[dict] = mapped_column(JSON, default=dict)
     next_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    worker_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    watch_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Offer(Base):
@@ -80,6 +84,8 @@ class Offer(Base):
     shipping_country: Mapped[str | None] = mapped_column(String(2))
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    stock_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_stock_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     last_changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     source_error: Mapped[str | None] = mapped_column(String(500))
@@ -145,6 +151,8 @@ class WatchTarget(Base):
     include_preorders: Mapped[bool] = mapped_column(Boolean, default=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     last_error: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

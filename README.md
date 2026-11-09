@@ -21,17 +21,31 @@ Die Sidebar ist auf niedrigen Bildschirmen scrollbar.
   Games, Senpai-Cards, Johto-Cards und BulkParadise TCG (WooCommerce Store API)**;
   alle fünf Quellen live geprüft.
 - Zusätzlich **New Era TCG, Gem Cards, Xtreme Hits, cardcosmos und YONKO TCG**
-  über gezielte Shopify-Kollektionen.
+  über Shopify-Gesamtkataloge.
   Je drei Produktvarianten wurden gegen frische Detailabrufe geprüft.
   Umfang und Grenzen: [Händlererweiterung](docs/ADDITIONAL-MERCHANTS.md).
 - Zusätzlich **Gate to the Games, collect-it, Trader-Online, Card-Corner,
   LottiCards, Müller, CrispyCards und Spielewelt** über öffentliche HTML-Kataloge
-  und konkrete strukturierte Produktangebote; damit 18 konfigurierte Händler.
+  und konkrete strukturierte Produktangebote.
   **Games Island und Smyths Toys** sind wegen gesperrter Datenquelle bzw.
   Zugriffsprüfung noch nicht aktiviert. [Prüfbericht](docs/REQUESTED-MERCHANTS.md).
+- Zusätzlich **JustNerdsTCG, Miki’s Card Shop, S-Games, Evolution TCG und
+  ComicPlanet** als reguläre Quellen. Spielbereiche
+  wechseln sich bei der Entdeckung ab; bekannte Angebote und Direktlinks werden
+  unabhängig vom Katalogfortschritt aktualisiert. Gespeicherte Suchen öffnen ihre
+  Treffer direkt im Radar. [Quellenprüfung und Vorbestellungen](docs/PREORDER-SOURCES.md).
+- Zusätzlich **RocketCardStore, TobisToys und Animany**; insgesamt **26 aktive
+  Händler**. RocketCardStore und TobisToys sind über Shopify angebunden, Animany
+  über die WooCommerce Store API mit den neuesten Produkt-IDs zuerst.
+  Games Island bleibt nach erneuter Prüfung durch eine Validierungsseite blockiert.
+  [Abnahme der Anfragen vom 08.11.2026](docs/REQUESTED-SHOPS-2026-11-08.md).
+- Vollständige, fortsetzbare Katalogdurchläufe ohne Gesamtgrenze für Seiten oder
+  Produkte im unterstützten TCG-Umfang. Fortschritt ist im Händlerbereich sichtbar.
+  [Funktionsweise und Grenzen](docs/FULL-CATALOG.md).
 - Getrennte Variantenpreise und Bestände, auch für Booster/Display-Auswahlartikel.
-- Separater Worker mit regelmäßigen Abrufen, Shop-Leases, HTTP-Abständen,
-  begrenzten Wiederholungen und Backoff bei Fehlern.
+- Ein eigener Worker je Händler sowie ein separater Alarm-Worker; Watchlist-Prüfungen
+  haben einen eigenen Fünf-Minuten-Plan. HTTP-Abstände und Fehlerpausen gelten weiterhin.
+  [Betrieb und Bestandsalter](docs/MERCHANT-WORKERS.md).
 - Neue Angebote, Restocks, Vorbestellungen und Preisänderungen samt Verlauf.
 - Vue-Dashboard mit Suchfeld, TCG-/Set-/Händler-/Sprach-/Produkttyp-/Bestandsfiltern,
   Sortierung, Seitenwechsel, Detailansicht und direktem Händlerlink.
@@ -87,7 +101,7 @@ Alarme, bis Suchregeln beziehungsweise Produktlinks eingerichtet sind.
 
 ```bash
 docker compose ps
-docker compose logs -f worker
+docker compose logs -f worker-card-corner notifications
 docker compose exec api python -m app.manage scan --shop fantasiacards --force
 docker compose down
 ```
@@ -237,12 +251,15 @@ Nachrichten zu vermeiden. Der Status lautet dann `uncertain`.
 | `RADAR_TELEGRAM_BOT_TOKEN` / `RADAR_TELEGRAM_CHAT_ID` | Optionale Telegram-Zugangsdaten |
 | `RADAR_USER_AGENT` | Kennung für die Shopabrufe; optional Betreiberkontakt ergänzen |
 | `RADAR_REQUEST_DELAY_SECONDS` | Mindestabstand pro Shop-Anfrage; Vorgabe 2 Sekunden |
-| `RADAR_STALE_AFTER_MINUTES` | Alte Beobachtungen als unbekannt anzeigen; Vorgabe 30 |
+| `RADAR_STALE_AFTER_MINUTES` | Alte Beobachtungen als unbekannt anzeigen; Vorgabe 1440 (24 Stunden) |
+| `RADAR_REFRESH_INTERVAL_SECONDS` | Zielabstand normaler Bestandsprüfungen; Vorgabe 1800 |
+| `RADAR_WATCH_INTERVAL_SECONDS` | Zielabstand für Direktlinks und Suchregel-Treffer; Vorgabe 300 |
+| `RADAR_REFRESH_BATCH_SIZE` | Produktseiten je Prüfungsabschnitt; Vorgabe 12, kein Katalog-Gesamtlimit |
 | `RADAR_HISTORY_RETENTION_DAYS` | Aufbewahrung der Preis-/Bestandsbeobachtungen; Vorgabe 90 Tage |
 | `RADAR_SHOPS_FILE` | Pfad der Shop-Konfiguration; Vorgabe `config/shops.json` |
 | `RADAR_BIND_ADDRESS` / `RADAR_PORT` | Compose-Bindung; Vorgabe `127.0.0.1:8000` |
 | `RADAR_DOMAIN` | Nur für die optionale Ubuntu-/Caddy-Konfiguration |
-| `COMPOSE_FILE` | Auf dem JoyBoyz-Server: `compose.yaml:compose.traefik.yaml` |
+| `COMPOSE_FILE` | Lokal: `compose.yaml:compose.workers.yaml`; Server zusätzlich `compose.traefik.yaml` |
 
 Schlüssel und Kanal-Zugangsdaten werden nicht über die API ausgegeben. Das
 Dashboard hält den eingegebenen Team-Schlüssel nur für die Browser-Sitzung.
@@ -254,16 +271,22 @@ In [config/shops.json](config/shops.json) einen Händler mit eindeutiger `slug`,
 Vor dem Einsatz Endpunkte und Zugangsbedingungen prüfen. Anschließend:
 
 ```bash
+python3 scripts/generate_merchant_workers.py
 docker compose run --rm migrate
-docker compose restart worker
+docker compose up -d
 ```
 
 Vorhandene Adapter:
 
-- `shopify`: `page_size`, `max_pages`, `currency`, optional `collections`.
-- `woocommerce`: `page_size`, `max_pages`, `searches` für ausgewählte Suchbegriffe.
+- `shopify`: `full_catalog: true`, `page_size` (maximal 250), `currency`.
+  Der Gesamtkatalog wird bis zur letzten Seite durchlaufen.
+- `woocommerce`: `full_catalog: true`, `page_size` (maximal 100). Alle Seiten
+  und veröffentlichten Varianten werden in fortsetzbaren Abschnitten gelesen.
+  Optional begrenzen `category_ids` und `tag_ids` die Entdeckung auf eine
+  Vereinigung dieser Bereiche. Ohne diese Filter bleibt der Gesamtkatalog aktiv.
+  [Animanys geprüfter TCG-Filter](docs/ANIMANY-TCG-FILTER.md).
 - `structured_html`: `categories` mit `path` und optionalem TCG-Kontext `game`,
-  `products_per_category` (maximal zehn); `markup: trader` bzw. `markup: shopify`
+  `full_catalog: true`; `markup: trader` bzw. `markup: shopify`
   für die geprüften Katalogvorlagen. Jeder übernommene Preis stammt aus einem
   frischen Produktdetailabruf. Mehrdeutige Varianten-/Mindestpreise werden ausgelassen.
 
@@ -272,9 +295,10 @@ Für andere Shops eine Klasse mit `discover()` und `fetch_url()` unter
 `SourceOffer`-Objekte; Identifikation, Historie, Regeln und Benachrichtigungen
 bleiben unverändert. Basisklasse und Tests zeigen das erwartete Format.
 
-Die konfigurierten Abrufe sind absichtlich begrenzt. Sie decken nicht den gesamten
-Markt und nicht jeden älteren Shopartikel ab. Direkte Produktlinks werden
-zusätzlich abgefragt. Ein fehlender Artikel im Katalogauszug gilt nie automatisch
+Die aktiven Anbindungen durchlaufen alle Katalogseiten im konfigurierten
+TCG-Umfang und setzen nach Unterbrechungen fort. Sie decken nicht den gesamten
+Markt ab; gesperrte oder unklare Angebote bleiben als Lücken erkennbar. Direkte
+Produktlinks werden zusätzlich abgefragt. Ein fehlender Artikel im aktuellen Abruf gilt nie automatisch
 als ausverkauft. Verbindungsfehler und veraltete Prüfungen ergeben `unbekannt`.
 
 ## Tests und Build
@@ -321,7 +345,7 @@ Einrichtung, Betrieb und Backups: [Deployment-Anleitung](docs/DEPLOYMENT.md).
 
 ## Bewusste Grenzen und nächste Schritte
 
-- 18 Händler, begrenzte Katalogfenster; weitere gute DE/EU-Quellen liefern den
+- 26 Händler mit fortsetzbaren Katalogdurchläufen; weitere gute DE/EU-Quellen liefern den
   größten zusätzlichen Nutzen.
 - Kein vollständiger Sealed-Katalog. Fehlende Packzahlen/Produktmerkmale werden
   nicht geraten. Im ersten Live-Ausschnitt lagen noch keine sicher zugeordneten
@@ -331,7 +355,9 @@ Einrichtung, Betrieb und Backups: [Deployment-Anleitung](docs/DEPLOYMENT.md).
 - Gemeinsamer Team-Zugang; noch keine einzelnen Nutzerkonten oder Rollen.
 - B2B-Konten, Lieferantenimporte und Bestell-/Stream-Bedarfsplanung sind spätere
   Erweiterungen.
-- Ein Worker ist die vorgesehene Betriebsgröße. PostgreSQL verwendet pro Shop
+- Ein Worker pro Händler plus ein Alarm-Worker ist die vorgesehene Betriebsgröße.
+  Bestehende Installationen müssen `compose.workers.yaml` in `COMPOSE_FILE`
+  aufnehmen; siehe [Umstellung](docs/MERCHANT-WORKERS.md). PostgreSQL verwendet pro Shop
   eine verbindungsgebundene Sperre, die auch nach einem Prozessabbruch automatisch
   freigegeben wird. Die SQLite-Entwicklungsvariante behält als einfacheren
   Rückfall eine zeitlich begrenzte Lease.

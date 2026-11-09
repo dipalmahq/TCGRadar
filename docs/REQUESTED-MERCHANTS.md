@@ -1,5 +1,13 @@
 # Angefragte Händler vom 07.11.2026
 
+Dieser Bericht beschreibt die erste Abnahme mit Katalogausschnitten. Die aktive
+Version liest inzwischen vollständige Kataloge in fortsetzbaren Durchläufen;
+siehe [Vollständige Katalogdurchläufe](FULL-CATALOG.md).
+
+Die erneute Games-Island-Prüfung und weitere Nutzeranfragen vom 08.11.2026 stehen
+im [aktuellen Abnahmebericht](REQUESTED-SHOPS-2026-11-08.md). Games Island liefert
+inzwischen eine lesbare Startseite, jedoch weiterhin keine lesbaren TCG-Kataloge.
+
 Acht zusätzliche Quellen sind implementiert. Die beiden weiteren angefragten
 Shops stehen mit dem konkreten Hindernis in `config/shops.pending.json`, nicht
 in der aktiven Händlerkonfiguration.

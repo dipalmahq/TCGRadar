@@ -20,7 +20,9 @@ def main():
                 ["docker", "compose", "exec", "-T", "db", "pg_dump", "-U", "radar", "-d", "radar", "-Fc"],
                 cwd=root, stdout=dump, check=True,
             )
-        for relative in (".env", "config/shops.json", "compose.yaml", "compose.traefik.yaml"):
+        for relative in (".env", "config/shops.json", "compose.yaml", "compose.traefik.yaml", "compose.workers.yaml"):
+            if relative == 'compose.workers.yaml' and not (root / relative).exists():
+                continue
             target = temporary / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(root / relative, target)

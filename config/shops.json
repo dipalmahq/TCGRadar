@@ -7,9 +7,9 @@
     "adapter": "shopify",
     "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 3,
-      "currency": "EUR"
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
     }
   },
   {
@@ -18,17 +18,10 @@
     "base_url": "https://house-of-cards-and-games.de",
     "country": "DE",
     "adapter": "woocommerce",
-    "interval_seconds": 900,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 10,
-      "max_pages": 1,
-      "searches": [
-        "Pokemon",
-        "One Piece",
-        "Fusion World",
-        "Masters",
-        "Dragon Ball"
-      ]
+      "page_size": 50,
+      "full_catalog": true
     }
   },
   {
@@ -37,17 +30,10 @@
     "base_url": "https://senpai-cards.de",
     "country": "DE",
     "adapter": "woocommerce",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 10,
-      "max_pages": 1,
-      "searches": [
-        "One Piece",
-        "Fusion World",
-        "Pokemon",
-        "Masters",
-        "Dragon Ball"
-      ]
+      "page_size": 50,
+      "full_catalog": true
     }
   },
   {
@@ -56,17 +42,10 @@
     "base_url": "https://johto-cards.de",
     "country": "DE",
     "adapter": "woocommerce",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 10,
-      "max_pages": 1,
-      "searches": [
-        "Pokemon",
-        "One Piece",
-        "Fusion World",
-        "Masters",
-        "Dragon Ball"
-      ]
+      "page_size": 50,
+      "full_catalog": true
     }
   },
   {
@@ -75,17 +54,10 @@
     "base_url": "https://bulkparadise-tcg.de",
     "country": "DE",
     "adapter": "woocommerce",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 10,
-      "max_pages": 1,
-      "searches": [
-        "Pokemon",
-        "One Piece",
-        "Fusion World",
-        "Masters",
-        "Dragon Ball"
-      ]
+      "page_size": 50,
+      "full_catalog": true
     }
   },
   {
@@ -94,19 +66,11 @@
     "base_url": "https://newera-tcg.shop",
     "country": "DE",
     "adapter": "shopify",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 2,
+      "page_size": 250,
       "currency": "EUR",
-      "collections": [
-        "displays",
-        "booster",
-        "displays-1",
-        "booster-1",
-        "displays-2",
-        "booster-2"
-      ]
+      "full_catalog": true
     }
   },
   {
@@ -115,19 +79,11 @@
     "base_url": "https://gemcards.de",
     "country": "DE",
     "adapter": "shopify",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 2,
+      "page_size": 250,
       "currency": "EUR",
-      "collections": [
-        "one-piece-displays",
-        "one-piece-booster-englisch",
-        "pokemon-displays",
-        "pokemon-booster",
-        "dragon-ball-fusion-world",
-        "dragon-ball-masters"
-      ]
+      "full_catalog": true
     }
   },
   {
@@ -136,19 +92,11 @@
     "base_url": "https://www.xtremehits.de",
     "country": "DE",
     "adapter": "shopify",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 2,
+      "page_size": 250,
       "currency": "EUR",
-      "collections": [
-        "pokemon-displays",
-        "pokemon-booster-packs",
-        "pokemon-top-trainer-boxen",
-        "pokemon-blister-packs",
-        "pokemon-kollektionen",
-        "pokemon-tins-und-sammelkoffer"
-      ]
+      "full_catalog": true
     }
   },
   {
@@ -157,19 +105,11 @@
     "base_url": "https://cardcosmos.de",
     "country": "DE",
     "adapter": "shopify",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 2,
+      "page_size": 250,
       "currency": "EUR",
-      "collections": [
-        "pokemon-booster-displays",
-        "pokemon-booster-kaufen",
-        "pokemon-elite-trainer-boxen",
-        "one-piece-booster-displays",
-        "one-piece-einzelbooster",
-        "dragon-ball"
-      ]
+      "full_catalog": true
     }
   },
   {
@@ -178,19 +118,11 @@
     "base_url": "https://yonko-tcg.com",
     "country": "DE",
     "adapter": "shopify",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
-      "page_size": 50,
-      "max_pages": 2,
+      "page_size": 250,
       "currency": "EUR",
-      "collections": [
-        "one-piece-displays",
-        "one-piece-boosterpacks",
-        "pokemon-displays",
-        "pokemon-booster",
-        "pokemon-boxen",
-        "dragon-ball-display"
-      ]
+      "full_catalog": true
     }
   },
   {
@@ -199,23 +131,24 @@
     "base_url": "https://www.gate-to-the-games.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "categories": [
         {
-          "path": "/Pokemon-Karten/Pokemon-Displays/",
+          "path": "/Pokemon-Karten/",
           "game": "Pokemon"
         },
         {
-          "path": "/Pokemon-Karten/Pokemon-Booster/",
-          "game": "Pokemon"
-        },
-        {
-          "path": "/One-Piece-TCG-Trading-Card-Game-Kartenspiel-Sammelkarten-englisch",
+          "path": "/One-Piece-TCG-Trading-Card-Game-Kartenspiel-Sammelkarten",
           "game": "One Piece"
+        },
+        {
+          "path": "/andere-TCGs/dragon-ball-card-game/",
+          "game": "Dragon Ball"
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true,
+      "crawl_subcategories": true
     }
   },
   {
@@ -224,15 +157,24 @@
     "base_url": "https://www.collect-it.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "categories": [
         {
-          "path": "/pokemon/booster-displays",
+          "path": "/Pokemon",
           "game": "Pokemon"
+        },
+        {
+          "path": "/sammelkarten/one-piece",
+          "game": "One Piece"
+        },
+        {
+          "path": "/Sammelkarten/Dragonball",
+          "game": "Dragon Ball"
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true,
+      "crawl_subcategories": true
     }
   },
   {
@@ -241,20 +183,21 @@
     "base_url": "https://trader-online.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "markup": "trader",
       "categories": [
         {
-          "path": "/Pokemon/Displays-Boxen/Booster-Displays/",
+          "path": "/pokemon/displays-boxen/",
           "game": "Pokemon"
         },
         {
-          "path": "/Pokemon/Displays-Boxen/Booster-Packs/",
-          "game": "Pokemon"
+          "path": "/weitere-tcgs/one-piece/",
+          "game": "One Piece"
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true,
+      "pagination": "trader_ajax"
     }
   },
   {
@@ -263,23 +206,24 @@
     "base_url": "https://www.card-corner.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "categories": [
         {
-          "path": "/Pokemon-Booster",
-          "game": "Pokemon"
-        },
-        {
-          "path": "/Pokemon-Display",
+          "path": "/pokemon-karten",
           "game": "Pokemon"
         },
         {
           "path": "/One-Piece-Karten",
           "game": "One Piece"
+        },
+        {
+          "path": "/Dragonball-Karten",
+          "game": "Dragon Ball"
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true,
+      "crawl_subcategories": true
     }
   },
   {
@@ -288,11 +232,11 @@
     "base_url": "https://www.lotticards.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "categories": [
         {
-          "path": "/pokemon-booster-displays",
+          "path": "/pokemon-sammelkarten",
           "game": "Pokemon"
         },
         {
@@ -300,7 +244,7 @@
           "game": "One Piece"
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true
     }
   },
   {
@@ -309,19 +253,17 @@
     "base_url": "https://www.mueller.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "categories": [
-        {
-          "path": "/search/?q=dragon%20ball",
-          "game": ""
-        },
         {
           "path": "/c/spielwaren/spiele-puzzles/sammelkarten/",
           "game": ""
         }
       ],
-      "products_per_category": 6
+      "full_catalog": true,
+      "pagination": "page",
+      "html_page_size": 60
     }
   },
   {
@@ -330,24 +272,16 @@
     "base_url": "https://crispycards.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "markup": "shopify",
-      "products_per_category": 6,
       "categories": [
         {
-          "path": "/collections/pokemon-display",
-          "game": "Pokemon"
-        },
-        {
-          "path": "/collections/one-piece-displays-auf-englisch",
-          "game": "One Piece"
-        },
-        {
-          "path": "/collections/dragon-ball-tcg",
+          "path": "/collections/all",
           "game": ""
         }
-      ]
+      ],
+      "full_catalog": true
     }
   },
   {
@@ -356,24 +290,136 @@
     "base_url": "https://spielewelt.de",
     "country": "DE",
     "adapter": "structured_html",
-    "interval_seconds": 1200,
+    "interval_seconds": 600,
     "config": {
       "markup": "shopify",
-      "products_per_category": 6,
       "categories": [
         {
-          "path": "/collections/pokemon-displays",
+          "path": "/collections/all",
+          "game": ""
+        }
+      ],
+      "full_catalog": true,
+      "shipping_availability_endpoint": "https://spielewelt-amberg.myshopify.com/api/2026-10/graphql.json"
+    }
+  },
+  {
+    "slug": "justnerds-tcg",
+    "name": "JustNerdsTCG",
+    "base_url": "https://justnerdstcg.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "mikis-card-shop",
+    "name": "Miki's Card Shop",
+    "base_url": "https://www.mikiscardshop.at",
+    "country": "AT",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "s-games",
+    "name": "S-Games",
+    "base_url": "https://s-games.at",
+    "country": "AT",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "evolution-tcg",
+    "name": "Evolution TCG",
+    "base_url": "https://evlutcg.com",
+    "country": "NL",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "comicplanet",
+    "name": "ComicPlanet",
+    "base_url": "https://www.comicplanet.de",
+    "country": "DE",
+    "adapter": "structured_html",
+    "interval_seconds": 600,
+    "config": {
+      "full_catalog": true,
+      "pagination": "shopware",
+      "categories": [
+        {
+          "path": "/sammelkarten/pokemon/",
           "game": "Pokemon"
         },
         {
-          "path": "/collections/pokemon-booster",
-          "game": "Pokemon"
-        },
-        {
-          "path": "/collections/one-piece-kopie",
+          "path": "/sammelkarten/one-piece/",
           "game": "One Piece"
+        },
+        {
+          "path": "/sammelkarten/dragon-ball/",
+          "game": "Dragon Ball"
         }
       ]
+    }
+  },
+  {
+    "slug": "rocket-card-store",
+    "name": "RocketCardStore",
+    "base_url": "https://www.rocketcardstore.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "tobis-toys",
+    "name": "TobisToys",
+    "base_url": "https://tobistoys.de",
+    "country": "DE",
+    "adapter": "shopify",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 250,
+      "currency": "EUR",
+      "full_catalog": true
+    }
+  },
+  {
+    "slug": "animany",
+    "name": "Animany",
+    "base_url": "https://animany.de",
+    "country": "DE",
+    "adapter": "woocommerce",
+    "interval_seconds": 600,
+    "config": {
+      "page_size": 50,
+      "full_catalog": true,
+      "catalog_order": "desc",
+      "category_ids": [846, 1082, 1442, 875, 1101, 1099, 3151, 2298],
+      "tag_ids": [316]
     }
   }
 ]

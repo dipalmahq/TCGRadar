@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+import hashlib
 from urllib.parse import parse_qs, quote, urlsplit
 
 from app.adapters.base import ScanResult, ShopAdapter, SourceError, SourceOffer
@@ -23,18 +24,23 @@ class ShopifyAdapter(ShopAdapter):
         tags = product.get("tags", [])
         labels = " ".join(tags) if isinstance(tags, list) else str(tags)
         labels += " " + str(product.get("product_type", ""))
-        preorder = any(token in (title + " " + labels).lower() for token in ("vorbestell", "preorder", "pre-order", "pre order"))
+        from app.adapters.availability import preorder_evidence
+        preorder = preorder_evidence(title + " " + labels, str(product.get("body_html") or product.get("description", "")))
         offers = []
         for variant in product.get("variants", []):
             label = str(variant.get("title", ""))
             label = "" if label == "Default Title" else label
             available = variant.get("available")
             status = ("preorder" if preorder else "in_stock") if available is True else "out_of_stock" if available is False else "unknown"
+            price = int(variant["price"]) if minor_units and str(variant.get("price", "")).isdigit() else decimal_minor(variant.get("price")) if not minor_units else None
+            # Zero-priced catalog placeholders are not a confirmed purchase price.
+            if price == 0:
+                price = None
             offers.append(SourceOffer(
                 external_id=str(variant["id"]),
                 title=f"{title} · {label}" if label else title,
                 url=f"{self.client.base_url}/products/{quote(handle, safe='-')}?variant={variant['id']}",
-                price_minor=int(variant["price"]) if minor_units and str(variant.get("price", "")).isdigit() else decimal_minor(variant.get("price")) if not minor_units else None,
+                price_minor=price,
                 currency=self.config.get("currency", "EUR"),
                 availability=status,
                 description=str(product.get("body_html") or product.get("description", "")),
@@ -46,6 +52,8 @@ class ShopifyAdapter(ShopAdapter):
         return offers
 
     def discover(self) -> ScanResult:
+        if self.config.get("full_catalog"):
+            return self.discover_batch()
         size = max(1, min(int(self.config.get("page_size", 50)), 250))
         pages = max(1, min(int(self.config.get("max_pages", 3)), 10))
         collections = self.config.get("collections", [None])
@@ -69,6 +77,30 @@ class ShopifyAdapter(ShopAdapter):
                 if page == pages:
                     result.coverage_limited = True
         return result
+
+    def discover_batch(self, cursor=None):
+        if not self.config.get("full_catalog"):
+            return self.discover()
+        state = dict(cursor or {"page": 1})
+        result = ScanResult()
+        size = max(1, min(int(self.config.get("page_size", 250)), 250))
+        try:
+            data = self.client.json(f"/products.json?limit={size}&page={state['page']}")
+            if not isinstance(data, dict) or not isinstance(data.get("products"), list):
+                raise SourceError("Unexpected Shopify catalog schema")
+            items = data["products"]
+            signature = hashlib.sha256(str([p.get("id") for p in items]).encode()).hexdigest()
+            if items and state.get("signature") == signature:
+                raise SourceError("Catalog pagination repeated the previous page; full scan not completed")
+            result.pages_scanned = 1
+            result.scanned_count = len(items)
+            result.offers = [offer for product in items for offer in self.parse_product(product)]
+            result.complete = len(items) < size
+            if not result.complete:
+                result.next_cursor = {"page": state["page"] + 1, "signature": signature}
+            return result
+        except SourceError as error:
+            return self.batch_error(result, state, error)
 
     def fetch_url(self, url: str) -> list[SourceOffer]:
         parsed = urlsplit(self.client.safe_url(url))

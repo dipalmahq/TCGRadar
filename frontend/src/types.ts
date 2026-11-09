@@ -17,6 +17,7 @@ export interface Meta {
   notifications_enabled: boolean;
   authentication_enabled: boolean;
   stale_after_minutes: number;
+  watch_interval_seconds?: number;
 }
 export interface Offer {
   id: number;
@@ -37,11 +38,11 @@ export interface Offer {
   price_minor: number | null;
   currency: string;
   price_per_booster_minor: number | null;
-  shipping_minor: number | null;
-  shipping_country: string | null;
   availability: string;
   observed_availability: string;
   stale: boolean;
+  fresh: boolean;
+  last_known_availability: string;
   source_error: string | null;
   first_seen_at: string;
   last_seen_at: string;
@@ -65,6 +66,14 @@ export interface Merchant {
   next_check_at: string;
   requested_at: string | null;
   locked_until: string | null;
+  catalog_progress: {
+    in_progress: boolean;
+    started_at: string | null;
+    completed_at: string | null;
+    scanned: number | null;
+    pages: number | null;
+    unresolved: number | null;
+  } | null;
 }
 export interface Rule {
   id: number;
@@ -95,6 +104,8 @@ export interface Watch {
   include_preorders: boolean;
   enabled: boolean;
   last_checked_at: string | null;
+  last_attempt_at: string | null;
+  next_check_at: string;
   last_error: string | null;
 }
 export interface Overview {

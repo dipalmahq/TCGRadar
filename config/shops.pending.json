@@ -4,7 +4,8 @@
     "name": "Games Island",
     "base_url": "https://games-island.eu",
     "status": "blocked",
-    "reason": "Main catalog returns crawler guidance instead of products. Linked https://crawlme.games-island.eu/robots.txt disallows all paths for User-agent: *."
+    "reason": "Rechecked 2026-11-08: homepage is readable, but public TCG categories /c/Pokemon and /c/Pokemon/Tins return an HTTP-200 validation/reCAPTCHA page without product data. No verified public product source available.",
+    "checked_at": "2026-11-08"
   },
   {
     "slug": "smyths-toys",

@@ -17,7 +17,7 @@ from app.seed import seed
 
 @pytest.fixture
 def settings():
-    return Settings(_env_file=None, environment="development", database_url="sqlite://", shops_file=Path("not-a-shop-config.json"), request_delay_seconds=0, notifications_enabled=True, api_key="test-team-key", discord_webhook_url="https://discord.com/api/webhooks/123/test-token", telegram_bot_token="", telegram_chat_id="")
+    return Settings(_env_file=None, environment="development", database_url="sqlite://", shops_file=Path("not-a-shop-config.json"), request_delay_seconds=0, stale_after_minutes=30, refresh_interval_seconds=300, refresh_batch_size=6, notifications_enabled=True, api_key="test-team-key", discord_webhook_url="https://discord.com/api/webhooks/123/test-token", telegram_bot_token="", telegram_chat_id="")
 
 
 @pytest.fixture

@@ -59,7 +59,7 @@ const meta = ref<Meta>({
   channels: [],
   notifications_enabled: false,
   authentication_enabled: false,
-  stale_after_minutes: 30,
+  stale_after_minutes: 1440,
 });
 const overview = ref<Overview>({
   offers: 0,
@@ -96,6 +96,7 @@ const filters = reactive({
   product_type: [] as string[],
   availability: [] as string[],
   sort: "recent",
+  rule_id: "",
 });
 const modal = ref<"rule" | "link" | null>(null);
 const selectedProductId = ref<number | null>(null);
@@ -448,6 +449,7 @@ function resetFilters() {
     product_type: [],
     availability: [],
     sort: "recent",
+    rule_id: "",
   });
 }
 watch(filters, () => {
@@ -504,6 +506,11 @@ function openRule(offer?: Offer) {
     url: "",
   });
   modal.value = "rule";
+}
+function showRule(rule: Rule) {
+  resetFilters();
+  filters.rule_id = String(rule.id);
+  section.value = "radar";
 }
 function editRule(rule: Rule) {
   openRule();
@@ -940,6 +947,9 @@ onUnmounted(() => {
                 : "ALLES FÜR DEINEN NÄCHSTEN STREAM"
             }}</span>
             <h1>{{ titles[section] }}<span class="heading-dot">.</span></h1>
+            <p v-if="section === 'radar' && filters.rule_id">
+              Gespeicherte Suche: {{ rules.find(r => String(r.id) === filters.rule_id)?.name }} · einschließlich derzeit nicht verfügbarer Angebote
+            </p>
             <p>
               {{
                 section === "radar"
@@ -978,10 +988,10 @@ onUnmounted(() => {
               </div>
             </div>
             <div class="metric">
-              <span>JETZT AUF LAGER <span class="metric-dot"></span></span>
+              <span>AUF LAGER <span class="metric-dot"></span></span>
               <div>
                 {{ overview.in_stock.toLocaleString("de-DE")
-                }}<small>zuletzt als lieferbar erkannt</small>
+                }}<small>laut letzter Händlerprüfung</small>
               </div>
             </div>
             <div class="metric">
@@ -1125,7 +1135,7 @@ onUnmounted(() => {
                       .join(", ")
                   }}</span
                 ></strong
-              ><span>Produktpreise · Versand separat</span>
+              ><span>Produktpreise</span>
             </div>
             <div class="table-head offer-grid">
               <span>PRODUKT</span><span>PREIS</span><span>VERFÜGBARKEIT</span
@@ -1224,21 +1234,15 @@ onUnmounted(() => {
                   }}
                   / Booster</span
                 ><span v-else>Packanzahl unbekannt</span
-                ><small>{{
-                  offer.shipping_minor === null
-                    ? "Versand unbekannt"
-                    : "+ " +
-                      currency(offer.shipping_minor, offer.currency) +
-                      " Versand"
-                }}</small>
+                >
               </div>
               <div class="availability-cell">
                 <span class="status-badge" :class="offer.availability"
-                  ><i></i>{{ statusLabels[offer.availability] }}</span
-                ><small :title="date(offer.last_seen_at)">{{
+                  ><i></i>{{ statusLabels[offer.availability] }}</span>
+                <small :title="date(offer.last_seen_at)">{{
                   offer.stale
-                    ? "Prüfung veraltet"
-                    : relative(offer.last_seen_at)
+                    ? "Prüfung älter als " + Math.round(meta.stale_after_minutes / 60) + " Stunden · " + relative(offer.last_seen_at)
+                    : "Bestätigt " + relative(offer.last_seen_at)
                 }}</small>
               </div>
               <div class="merchant-cell">
@@ -1298,8 +1302,7 @@ onUnmounted(() => {
               ><CircleCheck :size="14" /> {{ healthyShops }} von
               {{ merchants.length }} Händlern erfolgreich geprüft</span
             ><span
-              >Bestand und Endpreis werden beim Händler bestätigt. Versandkosten
-              sind nur enthalten, wenn ausgewiesen.</span
+              >Bestand und Endpreis werden beim Händler bestätigt.</span
             >
           </div>
         </template>
@@ -1370,7 +1373,7 @@ onUnmounted(() => {
                     ? currency(rule.max_price_minor)
                     : "Ohne Limit"
                 }}</strong
-                ><small>Produktpreis ohne unbekannte Versandkosten</small>
+                ><small>Preisgrenze je Artikel</small>
               </div>
               <div class="rule-meta">
                 <span>{{
@@ -1396,6 +1399,14 @@ onUnmounted(() => {
                     : merchantName(rule.merchant_id))
                 }}</span>
                 <div>
+                  <button
+                    class="icon-button"
+                    :aria-label="`Treffer für ${rule.name} anzeigen`"
+                    title="Treffer anzeigen"
+                    @click="showRule(rule)"
+                  >
+                    <Search :size="16" />
+                  </button>
                   <button
                     class="icon-button"
                     :aria-label="`${rule.name} bearbeiten`"
@@ -1452,6 +1463,9 @@ onUnmounted(() => {
                 item.last_error ||
                 "Zuletzt geprüft: " + relative(item.last_checked_at)
               }}</small>
+              <small v-if="item.next_check_at" :title="date(item.next_check_at)">
+                {{ new Date(item.next_check_at).getTime() < Date.now() - 60000 ? 'Prüfung überfällig seit: ' : 'Nächste Prüfung: ' }}{{ date(item.next_check_at) }}
+              </small>
             </div>
             <strong>{{
               item.max_price_minor
@@ -1562,8 +1576,20 @@ onUnmounted(() => {
                   ><strong>{{ date(shop.last_success_at) }}</strong>
                 </div>
                 <div>
-                  <span>Passende Angebote im letzten Abruf</span
+                  <span>{{ shop.catalog_progress ? "Erfasste Angebote" : "Passende Angebote im letzten Abruf" }}</span
                   ><strong>{{ shop.last_offer_count }}</strong>
+                </div>
+                <div v-if="shop.catalog_progress">
+                    <span>Katalogdurchlauf</span>
+                    <strong>{{ shop.catalog_progress.in_progress ? "Wird weiter eingelesen" : shop.catalog_progress.completed_at ? "Durchlauf beendet" : "Noch nicht gestartet" }}</strong>
+                </div>
+                <div v-if="shop.catalog_progress">
+                  <span>Fortschritt</span>
+                  <strong>{{ shop.catalog_progress.pages || 0 }} Seiten · {{ shop.catalog_progress.scanned || 0 }} Produkte geprüft</strong>
+                </div>
+                <div v-if="shop.catalog_progress?.unresolved">
+                  <span>Ungeklärte Produktzuordnungen</span>
+                  <strong>{{ shop.catalog_progress.unresolved }}</strong>
                 </div>
                 <div>
                   <span>Prüfintervall</span
@@ -1861,7 +1887,7 @@ onUnmounted(() => {
                 placeholder="Ohne Preisgrenze"
               /><span>€</span>
             </div>
-            <small>Versandkosten sind nicht Teil der Preisgrenze.</small></label
+            <small>Die Preisgrenze gilt je Artikel.</small></label
           >
           <label class="checkbox-label"
             ><input v-model="form.include_preorders" type="checkbox" />
@@ -1935,15 +1961,7 @@ onUnmounted(() => {
         <div class="detail-summary">
           <div>
             <span>PRODUKTPREIS</span
-            ><strong>{{ currency(detail.price_minor, detail.currency) }}</strong
-            ><small
-              >Versandkosten
-              {{
-                detail.shipping_minor === null
-                  ? "unbekannt"
-                  : currency(detail.shipping_minor, detail.currency)
-              }}</small
-            >
+            ><strong>{{ currency(detail.price_minor, detail.currency) }}</strong>
           </div>
           <span class="status-badge" :class="detail.availability"
             ><i></i>{{ statusLabels[detail.availability] }}</span
@@ -1968,7 +1986,7 @@ onUnmounted(() => {
           ><div>
             <strong>{{ item.merchant }}</strong
             ><small
-              >{{ statusLabels[item.availability] }} · Versand unbekannt</small
+              >{{ statusLabels[item.availability] }}</small
             >
           </div>
           <strong>{{ currency(item.price_minor, item.currency) }}</strong

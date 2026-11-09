@@ -19,16 +19,17 @@ Erneut abgelehnte historische Angebote erhalten `excluded=true`. Ihre Historie
 bleibt erhalten; Radar, Übersicht, Vergleich, Ereignisliste und Alarm-Matching
 schließen sie aus. Neue valide Quellzuordnungen können sie wieder zulassen.
 
-## Modularer Monolith, zwei Prozesse
+## Modularer Monolith mit getrennten Worker-Rollen
 
 Ein Python-Paket enthält API, Domänenlogik, Datenzugriffe und Adapter. FastAPI
-bedient API und gebautes Vue-Frontend. Ein eigenständig gestarteter Worker
-entdeckt Produkte, prüft Links und verarbeitet die persistente Versandwarteschlange.
+bedient API und gebautes Vue-Frontend. Je Händler entdeckt ein eigener Prozess
+Produkte und prüft Bestände. Ein weiterer Prozess verarbeitet ausschließlich die
+persistente Versandwarteschlange und die tägliche Historienbereinigung.
 PostgreSQL ist die Produktionsdatenbank; SQLite unterstützt lokale Entwicklung
 und schnelle Tests. Alembic verwaltet das Schema.
 
 Es gibt keine Redis-/Celery-/Kafka-Abhängigkeit. Bei der vorgesehenen kleinen
-Crew und wenigen Shops genügt ein Worker mit Datenbanksperren. Die API reiht
+Crew genügen Händlerprozesse mit Datenbanksperren. Die API reiht
 manuelle Shop-Prüfungen ein; sie startet keine unkoordinierten Hintergrundthreads.
 
 Unter PostgreSQL hält jeder Shopabruf auf einer eigenen Verbindung eine
@@ -37,6 +38,12 @@ bei Verbindungsverlust automatisch freigegeben. So kann ein neuer Worker eine
 nach einem Abbruch verwaiste Zeitmarkierung sofort übernehmen, während eine
 wirklich aktive Prüfung weiterhin nicht überlappt. SQLite verwendet für die
 lokale Entwicklung weiterhin die begrenzte Zeit-Lease.
+
+Der Alarm-Worker besitzt eine eigene PostgreSQL-Sperre gegen Doppelstarts.
+Jeder Händlerprozess und der Alarmprozess haben höchstens zwei Verbindungen;
+bei 26 Händlern ergibt das 54 Worker-Verbindungen, zusätzlich zum API-Pool.
+Watchlist-Fristen sind von Katalog-Cursorn getrennt; Details und Altersregeln:
+[Händler-Worker](MERCHANT-WORKERS.md).
 
 ## Wiederverwendung
 

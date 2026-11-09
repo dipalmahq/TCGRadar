@@ -1,8 +1,11 @@
 """Create an initial .env with private random credentials. Never overwrites one."""
 from pathlib import Path
 import secrets
+from generate_merchant_workers import render
+import json
 
 root = Path(__file__).resolve().parents[1]
+(root / 'compose.workers.yaml').write_text(render(json.loads((root / 'config/shops.json').read_text(encoding='utf-8'))), encoding='utf-8')
 target = root / ".env"
 if target.exists():
     raise SystemExit(".env already exists; nothing changed.")

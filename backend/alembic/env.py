@@ -16,7 +16,9 @@ if context.is_offline_mode():
     with context.begin_transaction():
         context.run_migrations()
 else:
-    with make_engine(url).connect() as connection:
+    supplied = config.attributes.get('connection')
+    from contextlib import nullcontext
+    with (nullcontext(supplied) if supplied is not None else make_engine(url).connect()) as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()

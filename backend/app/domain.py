@@ -17,6 +17,7 @@ def plain(value: str) -> str:
 
 def normalized(value: str) -> str:
     value = unicodedata.normalize("NFKD", plain(value).lower())
+    value = "".join(character for character in value if not unicodedata.combining(character))
     return " ".join(re.sub(r"[^a-z0-9]+", " ", value).split())
 
 
@@ -65,6 +66,9 @@ def identify_language(source: SourceOffer) -> str:
 
 def identify_type(text: str) -> str | None:
     text = normalized(text)
+    if (re.search(r'\bbox\b.{0,120}\b\d{1,3}\s*(?:booster|packs?)\b', text)
+            and not re.search(r'\b(?:case|karton|gift|premium|collection|kollektion|bundle|blister|tin|anniversary)\b', text)):
+        return 'display'
     for name, pattern in (
         ("case", r"\b(?:case|karton)\b"),
         ("display", r"\b(?:display|booster box)\b"),
@@ -136,6 +140,14 @@ class ProductIdentity:
 
 def classify(source: SourceOffer, merchant_slug: str) -> ProductIdentity | None:
     title = normalized(source.title)
+    context = normalized(source.labels)
+    # Book bundles can contain "Pokemon" and "Pack" without any trading cards.
+    if (re.search(r"\b(?:buch|bucher|books?|mangas?|comics?|artbooks?)\b", context)
+            and not re.search(r"\b(?:tcg|card game|trading cards?|sammelkarten)\b", context)):
+        return None
+    # Broad catalogs and recommendation boxes may include other games alongside a TCG category hint.
+    if re.search(r"\b(?:yu gi oh|yugioh|magic the gathering|mtg|lorcana|gundam|digimon|riftbound|weiss schwarz|cardfight|naruto|star wars|flesh and blood)\b", title):
+        return None
     # Graded singles can contain set names such as "Red Collection" or "Booster".
     # Their card numbers and grading labels take precedence over those words.
     if re.search(r"\b\d{1,3}\s*/\s*\d{1,3}\b", source.title) or re.search(

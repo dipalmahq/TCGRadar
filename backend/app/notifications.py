@@ -31,6 +31,13 @@ def rule_matches(rule, offer: Offer, product: Product) -> bool:
         return False
     if offer.availability == "preorder" and not rule.include_preorders:
         return False
+    return rule_targets(rule, offer, product) and eligible_price(offer, rule.max_price_minor)
+
+
+def rule_targets(rule, offer: Offer, product: Product) -> bool:
+    """Watch identities even while sold out or above the requested price."""
+    if not rule.enabled or offer.excluded:
+        return False
     for field, actual in (("game_id", product.game_id), ("product_id", product.id), ("merchant_id", offer.merchant_id), ("language", product.language), ("product_type", product.product_type)):
         expected = getattr(rule, field)
         if expected is not None and expected != actual:
@@ -46,7 +53,7 @@ def rule_matches(rule, offer: Offer, product: Product) -> bool:
     haystack = search_normalized(offer.title)
     if any(word not in haystack for word in search_normalized(rule.query).split()):
         return False
-    return eligible_price(offer, rule.max_price_minor)
+    return True
 
 
 def watch_matches(watch, offer) -> bool:
@@ -71,10 +78,12 @@ def money(value, currency="EUR"):
 
 def event_payload(event, offer, product):
     labels = {"new": "Neues Angebot", "restock": "Wieder verfügbar", "preorder": "Vorbestellung", "price_drop": "Preis gesunken", "price_increase": "Preis gestiegen"}
+    if offer.availability == 'preorder':
+        labels.update(new='Neue Vorbestellung', restock='Wieder vorbestellbar')
     unit = money(round(offer.price_minor / product.booster_count), offer.currency) + "/Booster" if offer.price_minor is not None and product.booster_count else "Boosteranzahl unbekannt"
     return {
         "title": labels.get(event.kind, event.kind),
-        "text": f"{offer.title}\n{offer.merchant.name} · {money(offer.price_minor, offer.currency)} · {unit}\nStatus: {offer.availability} · Versandkosten unbekannt\nPrüfzeitpunkt: {utcnow().isoformat()}",
+        "text": f"{offer.title}\n{offer.merchant.name} · {money(offer.price_minor, offer.currency)} · {unit}\nStatus: {offer.availability}\nPrüfzeitpunkt: {utcnow().isoformat()}",
         "url": offer.url,
         "event_id": event.id,
     }
@@ -146,6 +155,18 @@ def deliver_pending(session_factory, settings: Settings, transport=None):
                 if not claimed.rowcount:
                     continue
                 item = db.get(Notification, item_id)
+                if item.event_id is not None:
+                    from app.models import OfferEvent
+                    event = db.get(OfferEvent, item.event_id)
+                    offer = db.get(Offer, event.offer_id) if event else None
+                    seen = offer.last_seen_at if offer else None
+                    if seen is not None and seen.tzinfo is None:
+                        seen = seen.replace(tzinfo=utcnow().tzinfo)
+                    if (offer is None or offer.excluded or offer.source_error or offer.availability not in ('in_stock', 'preorder')
+                            or seen < utcnow() - timedelta(seconds=settings.watch_interval_seconds)):
+                        item.status, item.last_error = 'muted', 'Bestand vor Versand nicht mehr frisch bestätigt; kein veralteter Produktalarm.'
+                        db.commit()
+                        continue
                 item.attempts += 1
                 try:
                     response = send_payload(item.channel, item.payload, settings, client)

@@ -1,10 +1,25 @@
 from urllib.parse import parse_qs, urlencode, urlsplit
+from copy import deepcopy
+import hashlib
 
 from app.adapters.base import ScanResult, ShopAdapter, SourceError, SourceOffer
 
 
 class WooCommerceAdapter(ShopAdapter):
     prefix = "/wp-json/wc/store/v1/products"
+
+    def catalog_filters(self):
+        # Separate taxonomy queries form a union: category AND tag would lose
+        # older products whose merchant supplied only one of these taxonomies.
+        filters = []
+        for field, parameter in (("category_ids", "category"), ("tag_ids", "tag")):
+            if field not in self.config:
+                continue
+            values = self.config[field]
+            if not isinstance(values, list) or not values or any(type(v) is not int or v <= 0 for v in values):
+                raise SourceError(f"Invalid WooCommerce {field}; expected positive taxonomy IDs")
+            filters.append({parameter: ",".join(str(v) for v in dict.fromkeys(values)), parameter + "_operator": "in"})
+        return filters or [{}]
 
     def parse_product(self, product: dict, parent: dict | None = None) -> SourceOffer | None:
         parent = parent or {}
@@ -35,9 +50,11 @@ class WooCommerceAdapter(ShopAdapter):
             title += " · " + variation
         categories = parent.get("categories", []) + product.get("categories", [])
         labels.extend(str(c.get("name", "")) for c in categories)
+        labels.extend(str(t.get("name", "")) for t in parent.get("tags", []) + product.get("tags", []))
         extensions = product.get("extensions", {}).get("woocommerce-germanized", {})
         delivery = str(extensions.get("delivery_time_html", ""))
-        preorder = any(token in (title + " " + delivery).lower() for token in ("vorbestell", "preorder", "pre-order"))
+        from app.adapters.availability import preorder_evidence
+        preorder = preorder_evidence(title + " " + delivery, str(product.get("description") or parent.get("description", "")))
         in_stock = product.get("is_in_stock")
         buyable = product.get("is_purchasable")
         status = "unknown"
@@ -69,7 +86,7 @@ class WooCommerceAdapter(ShopAdapter):
             return [offer] if offer else []
         result.scanned_count += len(product.get("variations", []))
         items = []
-        for variation in product.get("variations", [])[:12]:
+        for variation in product.get("variations", []):
             try:
                 detail = self.client.json(f"{self.prefix}/{int(variation['id'])}")
                 detail = {**detail, "attributes": variation.get("attributes", []) + detail.get("attributes", [])}
@@ -81,13 +98,15 @@ class WooCommerceAdapter(ShopAdapter):
         return items
 
     def discover(self) -> ScanResult:
+        if self.config.get("full_catalog"):
+            return self.discover_batch()
         size = max(1, min(int(self.config.get("page_size", 10)), 100))
         pages = max(1, min(int(self.config.get("max_pages", 1)), 10))
         result = ScanResult()
         seen = set()
-        for query in self.config.get("searches", [""])[:6]:
+        for query, filters in [(q, f) for q in self.config.get("searches", [""])[:6] for f in self.catalog_filters()]:
             for page in range(1, pages + 1):
-                params = urlencode({"per_page": size, "page": page, "search": query, "orderby": "date", "order": "desc"})
+                params = urlencode({**filters, "per_page": size, "page": page, "search": query, "orderby": "date", "order": "desc"})
                 data = self.client.json(f"{self.prefix}?{params}")
                 if not isinstance(data, list):
                     raise SourceError("Unexpected WooCommerce catalog schema")
@@ -102,6 +121,89 @@ class WooCommerceAdapter(ShopAdapter):
                 if page == pages:
                     result.coverage_limited = True
         return result
+
+    def discover_batch(self, cursor=None):
+        if not self.config.get("full_catalog"):
+            return self.discover()
+        state = deepcopy(cursor or {"page": 1})
+        result = ScanResult()
+        size = max(1, min(int(self.config.get("page_size", 50)), 100))
+        try:
+            filters = self.catalog_filters()
+            filter_index = state.get("filter_index", 0)
+            if type(filter_index) is not int or not 0 <= filter_index < len(filters):
+                raise SourceError("Invalid WooCommerce taxonomy cursor")
+            multiple_filters = len(filters) > 1
+            seen = set(state.get("seen_ids", []))
+            order = self.config.get('catalog_order', 'asc')
+            if order not in ('asc', 'desc'):
+                raise SourceError('Invalid WooCommerce catalog order')
+            if "pending" not in state:
+                params = urlencode({**filters[filter_index], "per_page": size, "page": state["page"], "orderby": "id", "order": order})
+                response = self.client.get(f"{self.prefix}?{params}")
+                try:
+                    items = response.json()
+                except ValueError:
+                    raise SourceError("Source returned invalid JSON") from None
+                if not isinstance(items, list):
+                    raise SourceError("Unexpected WooCommerce catalog schema")
+                signature = hashlib.sha256(str([p.get("id") for p in items]).encode()).hexdigest()
+                if items and signature == state.get("signature"):
+                    raise SourceError("Catalog pagination repeated the previous page; full scan not completed")
+                total = response.headers.get("X-WP-TotalPages", "")
+                state.update(pending=[{"product": p, "variant": 0} for p in items], signature=signature,
+                             last_page=state["page"] >= int(total) if total.isdigit() else len(items) < size)
+                result.pages_scanned = 1
+            while state["pending"]:
+                entry = state["pending"][0]
+                product = entry["product"]
+                if not entry.get("counted"):
+                    product_id = str(product["id"])
+                    if multiple_filters and product_id in seen:
+                        state["pending"].pop(0)
+                        continue
+                    if multiple_filters:
+                        seen.add(product_id)
+                        state.setdefault("seen_ids", []).append(product_id)
+                    result.scanned_count += 1
+                    entry["counted"] = True
+                if product.get("type") != "variable":
+                    offer = self.parse_product(product)
+                    if offer:
+                        result.offers.append(offer)
+                    state["pending"].pop(0)
+                    continue
+                variations = product.get("variations", [])
+                while entry["variant"] < len(variations):
+                    if self.client.requests >= 24:
+                        result.complete, result.next_cursor = False, state
+                        return result
+                    variation = variations[entry["variant"]]
+                    try:
+                        detail = self.client.json(f"{self.prefix}/{int(variation['id'])}")
+                        detail = {**detail, "attributes": variation.get("attributes", []) + detail.get("attributes", [])}
+                        offer = self.parse_product(detail, parent=product)
+                        if offer:
+                            result.offers.append(offer)
+                    except SourceError as error:
+                        if "HTTP 404" not in str(error):
+                            raise
+                        result.warnings.append(f"Variant {variation['id']} no longer published; parent price skipped")
+                        result.coverage_limited = True
+                    result.scanned_count += 1
+                    entry["variant"] += 1
+                state["pending"].pop(0)
+            result.complete = state["last_page"]
+            if result.complete and filter_index + 1 < len(filters):
+                result.complete = False
+                result.next_cursor = {"page": 1, "filter_index": filter_index + 1, "seen_ids": state.get("seen_ids", [])}
+            elif not result.complete:
+                result.next_cursor = {"page": state["page"] + 1, "signature": state["signature"]}
+                if multiple_filters:
+                    result.next_cursor.update(filter_index=filter_index, seen_ids=state.get("seen_ids", []))
+            return result
+        except SourceError as error:
+            return self.batch_error(result, state, error)
 
     def fetch_url(self, url: str) -> list[SourceOffer]:
         parsed = urlsplit(self.client.safe_url(url))

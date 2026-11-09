@@ -23,6 +23,8 @@ def seed(db, settings: Settings):
             if merchant is None:
                 db.add(Merchant(**data))
             else:
+                if merchant.config != data["config"]:
+                    merchant.crawl_state = {}
                 for key in ("name", "base_url", "adapter", "country", "config", "interval_seconds"):
                     setattr(merchant, key, data[key])
     db.commit()

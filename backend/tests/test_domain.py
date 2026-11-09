@@ -9,6 +9,14 @@ def source(title="One Piece OP-17 Display 24 Booster [ENG]", **kwargs):
     return SourceOffer(external_id="1", title=title, url="https://fixture.example/products/one-piece", price_minor=12999, currency="EUR", availability="in_stock", **kwargs)
 
 
+@pytest.mark.parametrize("name", ["Pokémon", "Poke\u0301mon"])
+def test_accented_pokemon_names_are_not_split_into_different_words(name):
+    actual = classify(source(name + " Delta Herrschaft Display Deutsch"), "fixture")
+    assert actual is not None and actual.game == "pokemon"
+    expected = classify(source("Pokemon Delta Herrschaft Display Deutsch"), "fixture")
+    assert actual.identity_key == expected.identity_key
+
+
 def test_exact_product_can_match_across_merchants():
     a = classify(source(), "a")
     b = classify(source("One Piece Card Game OP17 Booster Box 24 Packs English"), "b")

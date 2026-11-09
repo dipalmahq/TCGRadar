@@ -3,11 +3,14 @@ from pathlib import Path
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="RADAR_", env_file=".env", extra="ignore")
     database_url: str = "postgresql+psycopg://radar:radar@localhost:5432/radar"
+    database_pool_size: int = Field(default=5, ge=1, le=20)
+    database_max_overflow: int = Field(default=5, ge=0, le=20)
     environment: str = "development"
     api_key: str = ""
     shops_file: Path = Path("config/shops.json")
@@ -16,7 +19,12 @@ class Settings(BaseSettings):
     request_delay_seconds: float = 2.0
     request_timeout_seconds: float = 25.0
     worker_tick_seconds: int = 5
-    stale_after_minutes: int = 30
+    worker_concurrency: int = 4
+    refresh_batch_size: int = 12
+    refresh_interval_seconds: int = Field(default=1800, ge=60)
+    watch_interval_seconds: int = Field(default=300, ge=60)
+    notification_tick_seconds: int = Field(default=1, ge=1)
+    stale_after_minutes: int = 1440
     history_retention_days: int = 90
     discord_webhook_url: str = ""
     telegram_bot_token: str = ""

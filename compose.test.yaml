@@ -38,6 +38,7 @@ services:
       RADAR_SHOPS_FILE: /app/config/shops.ci.json
     volumes:
       - ./backend/tests:/app/tests:ro
+      - ./scripts:/app/scripts:ro
     command: ["python", "-m", "pytest", "/app/tests", "--basetemp=/tmp/pytest-acceptance", "--tb=short", "-q", "-p", "no:cacheprovider"]
     depends_on:
       test-db:

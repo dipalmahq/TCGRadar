@@ -49,6 +49,7 @@ jobs:
       - run: python3 scripts/setup_env.py
       - name: Keep container smoke test independent of external shops
         run: cp config/shops.ci.json config/shops.json
+      - run: python3 scripts/generate_merchant_workers.py
       - run: docker compose config --quiet
       - run: docker compose build
       - name: Run packaged backend against isolated PostgreSQL

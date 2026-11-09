@@ -29,9 +29,15 @@ def aware(value):
     return value.replace(tzinfo=timezone.utc) if value and value.tzinfo is None else value
 
 
+def request_watch_checks(db):
+    for merchant in db.scalars(select(Merchant).where(Merchant.enabled.is_(True))):
+        merchant.watch_requested_at = utcnow()
+
+
 def serialize_offer(offer, settings):
     product = offer.product
     stale = utcnow() - aware(offer.last_seen_at) > timedelta(minutes=settings.stale_after_minutes)
+    fresh = not offer.source_error and offer.availability != 'unknown' and utcnow() - aware(offer.last_seen_at) <= timedelta(seconds=settings.watch_interval_seconds)
     invalid_identity = bool(offer.source_error and offer.source_error.startswith("Produktzuordnung"))
     return {
         "id": offer.id, "product_id": product.id,
@@ -48,7 +54,9 @@ def serialize_offer(offer, settings):
         "shipping_minor": offer.shipping_minor, "shipping_country": offer.shipping_country,
         "availability": "unknown" if stale else offer.availability,
         "observed_availability": offer.availability,
-        "stale": stale, "source_error": offer.source_error,
+        "last_known_availability": offer.last_known_availability,
+        "stale": stale, "fresh": bool(fresh), "source_error": offer.source_error,
+        "stock_attempted_at": iso(offer.stock_attempted_at), "next_stock_check_at": iso(offer.next_stock_check_at),
         "first_seen_at": iso(offer.first_seen_at), "last_seen_at": iso(offer.last_seen_at),
         "last_changed_at": iso(offer.last_changed_at),
     }
@@ -59,7 +67,7 @@ def row_values(row, keys):
 
 
 RULE_KEYS = ("id", "name", "query", "game_id", "game_ids", "product_id", "merchant_id", "merchant_ids", "set_code", "set_codes", "language", "languages", "product_type", "product_types", "max_price_minor", "include_preorders", "channels", "enabled", "created_at")
-WATCH_KEYS = ("id", "merchant_id", "url", "max_price_minor", "channels", "include_preorders", "enabled", "last_checked_at", "last_error", "created_at")
+WATCH_KEYS = ("id", "merchant_id", "url", "max_price_minor", "channels", "include_preorders", "enabled", "last_checked_at", "last_error", "created_at", "last_attempt_at", "next_check_at")
 
 
 def create_app(settings=None, session_factory=SessionLocal):
@@ -112,6 +120,7 @@ def create_app(settings=None, session_factory=SessionLocal):
             "notifications_enabled": settings.notifications_enabled,
             "authentication_enabled": bool(settings.api_key),
             "stale_after_minutes": settings.stale_after_minutes,
+            "watch_interval_seconds": settings.watch_interval_seconds,
         }
 
     @app.get("/api/overview")
@@ -119,8 +128,8 @@ def create_app(settings=None, session_factory=SessionLocal):
         cutoff = utcnow() - timedelta(minutes=settings.stale_after_minutes)
         return {
             "offers": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False))),
-            "in_stock": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False), Offer.availability == "in_stock", Offer.last_seen_at >= cutoff)),
-            "preorders": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False), Offer.availability == "preorder", Offer.last_seen_at >= cutoff)),
+            "in_stock": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False), Offer.source_error.is_(None), Offer.availability == "in_stock", Offer.last_seen_at >= cutoff)),
+            "preorders": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False), Offer.source_error.is_(None), Offer.availability == "preorder", Offer.last_seen_at >= cutoff)),
             "new_today": db.scalar(select(func.count(Offer.id)).where(Offer.excluded.is_(False), Offer.first_seen_at >= utcnow() - timedelta(hours=24))),
             "rules": db.scalar(select(func.count(SearchRule.id)).where(SearchRule.enabled.is_(True))),
             "pending_notifications": db.scalar(select(func.count(Notification.id)).where(Notification.status == "pending")),
@@ -133,10 +142,30 @@ def create_app(settings=None, session_factory=SessionLocal):
         set_code: list[str] | None = Query(None, max_length=50), merchant_id: list[int] | None = Query(None, max_length=50),
         language: list[str] | None = Query(None, max_length=50), product_type: list[str] | None = Query(None, max_length=50),
         availability: list[str] | None = Query(None, max_length=50), sort: str = "recent",
+        rule_id: int | None = Query(None, gt=0),
         limit: int = Query(30, ge=1, le=100), offset: int = Query(0, ge=0),
         db=Depends(database),
     ):
         stmt = select(Offer).join(Product).join(Game, Product.game_id == Game.id).outerjoin(Expansion, Product.expansion_id == Expansion.id).where(Offer.excluded.is_(False))
+        if rule_id:
+            rule = get_or_404(db, SearchRule, rule_id)
+            for singular, plural, column in (("game_id", "game_ids", Product.game_id), ("merchant_id", "merchant_ids", Offer.merchant_id),
+                                             ("language", "languages", Product.language), ("product_type", "product_types", Product.product_type)):
+                values = getattr(rule, plural) or ([getattr(rule, singular)] if getattr(rule, singular) is not None else [])
+                if values:
+                    stmt = stmt.where(column.in_(values))
+            if rule.product_id:
+                stmt = stmt.where(Product.id == rule.product_id)
+            codes = rule.set_codes or ([rule.set_code] if rule.set_code else [])
+            if codes:
+                from app.domain import search_normalized
+                matching = [e.id for e in db.scalars(select(Expansion)) if search_normalized(e.code) in {search_normalized(c) for c in codes}]
+                stmt = stmt.where(Expansion.id.in_(matching))
+            if rule.max_price_minor is not None:
+                stmt = stmt.where(Offer.currency == 'EUR', Offer.price_minor <= rule.max_price_minor)
+            # Include unavailable offers so the saved search remains useful while
+            # waiting for stock. Notification matching still enforces availability.
+            q = (q + ' ' + rule.query).strip()
         for word in q.split():
             title_match = Offer.title.ilike("%" + word.replace("%", "\\%").replace("_", "\\_") + "%", escape="\\")
             code = re.fullmatch(r"(OP|EB|PRB|FB|SB|BT|B)-?(\d{2})", word, re.I)
@@ -184,8 +213,15 @@ def create_app(settings=None, session_factory=SessionLocal):
 
     @app.get("/api/shops")
     def shops(db=Depends(database)):
-        keys = ("id", "slug", "name", "base_url", "country", "adapter", "enabled", "interval_seconds", "last_attempt_at", "last_success_at", "last_error", "error_count", "last_offer_count", "last_scanned_count", "next_check_at", "requested_at", "locked_until")
-        return [row_values(row, keys) for row in db.scalars(select(Merchant).order_by(Merchant.id))]
+        keys = ("id", "slug", "name", "base_url", "country", "adapter", "enabled", "interval_seconds", "last_attempt_at", "last_success_at", "last_error", "error_count", "last_offer_count", "last_scanned_count", "next_check_at", "requested_at", "locked_until", "worker_heartbeat_at")
+        results = []
+        for row in db.scalars(select(Merchant).order_by(Merchant.id)):
+            state = row.crawl_state or {}
+            progress = {key: state.get(key) for key in ("started_at", "completed_at", "scanned", "pages", "unresolved")}
+            progress["in_progress"] = state.get("cursor") is not None
+            results.append({**row_values(row, keys), "catalog_progress": progress if row.config.get("full_catalog") else None,
+                'stock_refresh': state.get('refresh'), 'watch_schedule': state.get('watch')})
+        return results
 
     @app.post("/api/shops/{shop_id}/check", status_code=202)
     def check_shop(shop_id: int, db=Depends(database)):
@@ -227,6 +263,7 @@ def create_app(settings=None, session_factory=SessionLocal):
                 get_or_404(db, cls, value)
         rule = SearchRule(**body.model_dump())
         db.add(rule)
+        request_watch_checks(db)
         db.commit()
         return row_values(rule, RULE_KEYS)
 
@@ -241,6 +278,7 @@ def create_app(settings=None, session_factory=SessionLocal):
                 get_or_404(db, cls, value)
         for key, value in body.model_dump().items():
             setattr(rule, key, value)
+        request_watch_checks(db)
         db.commit()
         return row_values(rule, RULE_KEYS)
 
@@ -248,6 +286,7 @@ def create_app(settings=None, session_factory=SessionLocal):
     def toggle_rule(rule_id: int, body: Toggle, db=Depends(database)):
         rule = get_or_404(db, SearchRule, rule_id)
         rule.enabled = body.enabled
+        request_watch_checks(db)
         db.commit()
         return row_values(rule, RULE_KEYS)
 
@@ -285,7 +324,7 @@ def create_app(settings=None, session_factory=SessionLocal):
             raise HTTPException(409, "Maximal 100 Produktlinks im MVP")
         watch = WatchTarget(merchant_id=merchant.id, **{**body.model_dump(), "url": url})
         db.add(watch)
-        merchant.next_check_at = utcnow()
+        merchant.watch_requested_at = utcnow()
         db.commit()
         return row_values(watch, WATCH_KEYS)
 
