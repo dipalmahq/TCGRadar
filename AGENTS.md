@@ -42,6 +42,10 @@ sind, entsprechend innerhalb dieses Umfangs bleiben.
   kontrollieren; die mobile Loginansicht bei Layoutänderungen ebenfalls prüfen.
 - Private Backups und Releasezustand:
   `/home/gabriel/dipalmaHQ/backups/tcgradar/`.
+- Bereinigung ausschließlich mit `scripts/cleanup.py` (Vorschau) bzw. `--apply`:
+  fünf aktuelle Imageversionen plus aktive/benutzte/Rollback-Images behalten;
+  Backups mindestens 30 Tage plus die zehn neuesten und Recovery-Referenzen.
+  Kein globales Docker-Prune. Die tägliche Bereinigung läuft um 04:45 Serverzeit.
 - `python3 scripts/deploy.py status` zeigt den aktiven Release.
 - `python3 scripts/deploy.py rollback` setzt auf den vorherigen Release zurück,
   sofern sich das Datenbankschema nicht unterscheidet. Keine automatischen

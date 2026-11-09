@@ -1,2 +1,4 @@
 # JoyBoyz PostgreSQL backup: daily at 04:15 in the server's timezone.
 15 4 * * * /usr/bin/python3 /home/gabriel/dipalmaHQ/TCGRadar/scripts/backup.py >> /home/gabriel/dipalmaHQ/backups/tcgradar/backup.log 2>&1
+# Retain recent/active images, 30 days of backups plus the ten newest.
+45 4 * * * /usr/bin/python3 /home/gabriel/dipalmaHQ/TCGRadar/scripts/cleanup.py --apply >> /home/gabriel/dipalmaHQ/backups/tcgradar/cleanup.log 2>&1

@@ -9,8 +9,6 @@ COPY frontend/src ./src
 RUN pnpm run build
 
 FROM python:3.12-slim-bookworm AS backend
-ARG VCS_REF=unknown
-LABEL org.opencontainers.image.revision=$VCS_REF
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY backend/requirements.lock /app/requirements.lock
@@ -24,5 +22,7 @@ COPY config /app/config
 COPY --from=frontend /web/dist /app/frontend/dist
 RUN useradd --create-home --uid 10001 radar && chown -R radar:radar /app
 USER radar
+ARG VCS_REF=unknown
+LABEL org.opencontainers.image.revision=$VCS_REF
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

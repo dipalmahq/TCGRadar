@@ -129,8 +129,12 @@ def deploy(commit):
     run('docker', 'tag', old_image_id, previous_image)
     previous = {'commit': run('git', 'rev-parse', 'HEAD'), 'schema': schema(),
                 'image': previous_image, 'environment': (ROOT / '.env').read_text(), 'services': services()}
+    if (STATE / 'current.json').exists():
+        previous['backup'] = json.loads((STATE / 'current.json').read_text()).get('backup')
     atomic_write(attempt / 'previous.json', json.dumps(previous, indent=2))
-    print(run(sys.executable, 'scripts/backup.py'), flush=True)
+    backup_output = run(sys.executable, 'scripts/backup.py')
+    print(backup_output, flush=True)
+    backup = backup_output.removeprefix('Backup complete: ').strip()
     image = 'joyboyz-tcg-radar:' + commit
     switched = False
     try:
@@ -149,7 +153,7 @@ def deploy(commit):
         compose('run', '--rm', '--no-deps', 'migrate', image=image)
         compose('up', '-d', '--no-deps', '--no-build', '--wait', '--wait-timeout', '150', *apps, image=image)
         verify(commit, apps)
-        release = {'commit': commit, 'image': image, 'schema': schema(), 'services': apps,
+        release = {'commit': commit, 'image': image, 'schema': schema(), 'services': apps, 'backup': backup,
                    'deployed_at': stamp, 'previous': str(attempt / 'previous.json')}
         atomic_write(attempt / 'release.json', json.dumps(release, indent=2))
         atomic_write(STATE / 'current.json', json.dumps(release, indent=2))

@@ -37,7 +37,8 @@ Backups enthalten Zugangsdaten und gehören nicht ins Repository.
 Der Benutzer-Cronjob aus `deploy/backup.cron` läuft täglich um 04:15 Uhr
 Serverzeit (Europe/Berlin); Ausgabe unter `backups/tcgradar/backup.log`.
 Die Sicherungen liegen auf demselben Server; für Schutz bei Serververlust ist
-zusätzlich eine externe Kopie erforderlich. Es gibt keine automatische Löschung.
+zusätzlich eine externe Kopie erforderlich. Die unten beschriebene Aufbewahrung
+entfernt ausschließlich eindeutig zugeordnete, abgelaufene Projektartefakte.
 
 Zur Wiederherstellung in eine separate, leere Datenbank den Abschnitt unten
 verwenden. Vor Updates oder Schemaänderungen ein frisches Backup erstellen.
@@ -110,8 +111,9 @@ python3 scripts/deploy.py status
 python3 scripts/deploy.py rollback
 ```
 
-`rollback` setzt auf den unmittelbar vorherigen Release zurück. Vorhandene
-Images werden nicht automatisch gelöscht. Ein fehlgeschlagener Build lässt die
+`rollback` setzt auf den unmittelbar vorherigen Release zurück. Das aktive und
+das unmittelbar vorherige Image bleiben bei der Bereinigung geschützt.
+Ein fehlgeschlagener Build lässt die
 laufende Anwendung unangetastet. Schlägt ein umgeschalteter Release fehl, wird
 das vorherige Image automatisch wieder gestartet, sofern die Alembic-Version
 unverändert ist.
@@ -126,6 +128,39 @@ Die private `.env` enthält den aktiven `RADAR_IMAGE`-Verweis. Releasezustand un
 Wiederherstellungsmetadaten liegen unter
 `/home/gabriel/dipalmaHQ/backups/tcgradar/deployments/`; `current.json` benennt
 den aktiven Commit und das Image. Diese Dateien werden nicht nach Git übernommen.
+
+## Aufbewahrung und Bereinigung
+
+`scripts/cleanup.py` zeigt standardmäßig nur einen Plan. Mit `--apply` wird er
+angewandt. Der tägliche Cronjob aus `deploy/backup.cron` führt Backups um 04:15
+und die Bereinigung um 04:45 Uhr Serverzeit aus. Bereinigung und Deployments
+verwenden dieselbe Sperre; während eines Deployments wird die Bereinigung übersprungen.
+
+- Images: mindestens fünf aktuelle unterschiedliche Imageversionen behalten.
+  Aktive/Rollback-Images und alle durch irgendeinen Container referenzierten
+  Images sind zusätzlich geschützt. Nur Tags aus `joyboyz-tcg-radar` werden
+  entfernt; kein globales Docker-Prune und keine erzwungene Löschung.
+- Alte, erfolgreich beendete Legacy-Worker-/Migrationscontainer dieses Projekts
+  werden entfernt, wenn sie keine aktuellen Dienste oder schreibbaren Mounts/
+  Datenvolumes enthalten. PostgreSQL und andere Anwendungen bleiben unberührt.
+- Datenbankbackups: alle Sicherungen der letzten 30 Tage und mindestens die
+  zehn neuesten vollständigen Sicherungen behalten. In Release-Metadaten
+  referenzierte Wiederherstellungssicherungen sind zusätzlich geschützt.
+- Release-Metadaten: mindestens 30 Tage und die zehn neuesten Einträge behalten;
+  aktive/aktuell referenzierte Einträge sind zusätzlich geschützt. Alte
+  Metadaten garantieren nicht, dass auch jedes historische Image erhalten bleibt.
+- Unbekannte Verzeichnisse, Quellarchiv-Sicherungen und unvollständige Backups
+  werden nicht automatisch gelöscht. Sicherungen unter einem abweichenden
+  `RADAR_BACKUP_DIR` werden von diesem Standard-Cleanup nicht verwaltet.
+
+```bash
+python3 scripts/cleanup.py          # Vorschau
+python3 scripts/cleanup.py --apply  # Projektbezogene Bereinigung
+```
+
+Ausgabe: `backups/tcgradar/cleanup.log`. Datenbankvolumes werden nie bereinigt.
+Einmalige Quell-/Git-Sicherungen bleiben privat archiviert; beim Entfernen alter
+Stashes oder Arbeitskopien zuerst den Inhalt des Archivs prüfen.
 
 ## Backup und Wiederherstellung
 
