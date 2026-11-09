@@ -1804,6 +1804,7 @@ h1 {
 .login-screen {
   min-height: 100dvh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   background: #18211b;
   position: relative;
@@ -1834,8 +1835,10 @@ h1 {
   padding: 42px;
   border: 1px solid #dce6ca;
   border-radius: 14px;
-  width: 460px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 460px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   box-shadow: 0 25px 80px #0812076e;
 }
 .login-card .brand {
